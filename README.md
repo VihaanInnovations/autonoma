@@ -5,7 +5,7 @@
 [![Deployment: On-Premise](https://img.shields.io/badge/Deployment-On--Premise-blue.svg)](index.html)
 [![Compliance: SOC2 Ready](https://img.shields.io/badge/Compliance-SOC2%20Ready-success.svg)](privacy.html)
 
-🌐 **Official Website**: [https://autonoma-ai.github.io/](https://autonoma-ai.github.io/)
+🌐 **Official Website**: [https://vihaaninnovations.github.io/autonoma/](https://vihaaninnovations.github.io/autonoma/)
 
 ---
 

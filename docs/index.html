@@ -9,7 +9,7 @@
     GitHub Username: CloudVithu
     Support Email: visuvalingamvithushan@gmail.com
     Sales Email: visuvalingamvithushan@gmail.com
-    Website URL: https://codesentinal-ai.github.io/
+    Website URL: https://vihaaninnovations.github.io/autonoma/
     ============================================
     -->
     <meta charset="UTF-8">
@@ -17,731 +17,624 @@
     <meta name="description"
         content="Autonoma - The World's First L5 Autonomous Code Engineer. Fixes bugs automatically.">
     <title>Autonoma - L5 Autonomous Code Engineer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.07);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.5);
+            --text: #ffffff;
+            --text-muted: #a3a3a3;
+            --border: rgba(255, 255, 255, 0.1);
+            --nav-height: 80px;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #0066cc;
-            --primary-dark: #0052a3;
-            --secondary: #6c757d;
-            --success: #28a745;
-            --text: #212529;
-            --text-light: #6c757d;
-            --bg: #ffffff;
-            --bg-light: #f8f9fa;
-            --border: #dee2e6;
-            --shadow: rgba(0, 0, 0, 0.1);
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-            line-height: 1.6;
-            color: var(--text);
-            background: var(--bg);
+        /* Ambient Background */
+        .ambient-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: -1;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .ambient-glow-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -200px;
+            right: -100px;
+            z-index: -1;
+            opacity: 0.3;
+            pointer-events: none;
         }
 
         /* Navigation */
         nav {
-            background: var(--bg);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
             position: sticky;
             top: 0;
             z-index: 100;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .logo img {
+            height: 32px;
+            width: auto;
         }
 
         .nav-links {
             display: flex;
             gap: 2rem;
             list-style: none;
-            align-items: center;
         }
 
         .nav-links a {
-            color: var(--text);
+            color: var(--text-muted);
             text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
         }
 
         .nav-links a:hover {
-            color: var(--primary);
+            color: var(--text);
         }
 
-        .logo {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 6rem 2rem;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            margin-bottom: 2rem;
-            opacity: 0.95;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 2rem;
-        }
-
+        /* Buttons */
         .btn {
-            padding: 0.75rem 2rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
             text-decoration: none;
-            display: inline-block;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
         }
 
         .btn-primary {
-            background: white;
-            color: var(--primary);
+            background: var(--text);
+            color: var(--bg-dark);
+            border: 1px solid var(--text);
         }
 
         .btn-primary:hover {
-            background: var(--bg-light);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background: transparent;
+            color: var(--text);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
         }
 
         .btn-secondary {
             background: transparent;
-            color: white;
-            border: 2px solid white;
+            border: 1px solid var(--border);
+            color: var(--text);
         }
 
         .btn-secondary:hover {
-            background: white;
-            color: var(--primary);
+            border-color: var(--text);
+            background: var(--bg-card);
         }
 
-        .trust-bullets {
+        /* Hero */
+        .hero {
+            min-height: calc(100vh - var(--nav-height));
             display: flex;
-            gap: 2rem;
+            flex-direction: column;
             justify-content: center;
-            flex-wrap: wrap;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .trust-bullets span {
-            display: flex;
             align-items: center;
-            gap: 0.5rem;
+            text-align: center;
+            padding: 4rem 1rem;
+            position: relative;
         }
 
-        .trust-bullets span::before {
-            content: "✓";
-            color: var(--success);
-            font-weight: bold;
+        .hero h1 {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
         }
 
-        /* Container */
+        .hero h1 span {
+            display: block;
+            background: linear-gradient(to right, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+            display: inline-block;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 4rem;
+        }
+
+        /* Feature Grid (Glassmorphism) */
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 4rem 2rem;
         }
 
-        /* Sections */
-        section {
+        .section-header {
+            text-align: center;
             margin-bottom: 4rem;
         }
 
-        h2 {
+        .section-header h2 {
             font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            color: var(--text);
-        }
-
-        h3 {
-            font-size: 1.75rem;
-            margin-bottom: 1rem;
-            margin-top: 2rem;
-            color: var(--text);
-        }
-
-        h4 {
-            font-size: 1.25rem;
-            margin-bottom: 0.75rem;
-            margin-top: 1.5rem;
-            color: var(--text);
-        }
-
-        p {
-            margin-bottom: 1rem;
-            color: var(--text-light);
-        }
-
-        ul,
-        ol {
-            margin-left: 2rem;
             margin-bottom: 1rem;
         }
 
-        li {
-            margin-bottom: 0.5rem;
-            color: var(--text-light);
-        }
-
-        /* Problem/Solution Sections */
-        .problem-section {
-            background: var(--bg-light);
-            padding: 4rem 2rem;
-        }
-
-        .problem-section h2 {
-            color: #dc3545;
-        }
-
-        .solution-section {
-            background: var(--bg);
-        }
-
-        /* Feature Cards */
-        .features-grid {
+        .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
-            margin-top: 2rem;
         }
 
-        .feature-card {
-            background: white;
+        .card {
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 8px;
             padding: 2rem;
-            box-shadow: 0 2px 8px var(--shadow);
-            transition: transform 0.3s, box-shadow 0.3s;
+            border-radius: 16px;
+            transition: all 0.3s ease;
         }
 
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 16px var(--shadow);
+        .card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
-        .feature-card h3 {
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-list {
+            list-style: none;
+        }
+
+        .card-list li {
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-list li::before {
+            content: "→";
             color: var(--primary);
-            margin-top: 0;
         }
 
-        /* Code Blocks */
-        pre {
-            background: #f4f4f4;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 1rem;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-
-        code {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-
-        /* Comparison Table */
-        .comparison {
-            background: var(--bg-light);
-            padding: 2rem;
-            border-radius: 8px;
-            margin: 2rem 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-
-        th,
-        td {
-            padding: 1rem;
-            text-align: left;
+        /* Installation Section */
+        .install-section {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgwem0yMCAyMGgyMHYyMEgyMHptLTIwIDBoMjB2MjBIMHoiIGZpbGw9IiMzMzMiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==');
+            padding: 6rem 0;
+            border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
+            margin-top: 4rem;
         }
 
-        th {
-            background: var(--bg-light);
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        /* Pricing Section */
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-        .pricing-card {
-            background: white;
-            border: 2px solid var(--border);
+        .terminal-window {
+            background: #1e1e1e;
             border-radius: 12px;
-            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #333;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+
+        .terminal-body {
+            padding: 2rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid #333;
+            background: #252526;
+        }
+
+        .tab-btn {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active {
+            color: #fff;
+            border-bottom: 2px solid var(--primary);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .install-cmd {
+            display: none;
+        }
+
+        .install-cmd.active {
+            display: block;
+        }
+
+        .cmd-line {
+            color: #d4d4d4;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .prompt { color: var(--accent); user-select: none; }
+        .command { flex-grow: 1; }
+        
+        .copy-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .copy-btn:hover { color: #fff; border-color: #fff; }
+
+        .direct-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: block;
+            margin-top: 0.5rem;
+        }
+        
+        .direct-link:hover { text-decoration: underline; }
+
+        /* Pricing */
+        .price-card {
             text-align: center;
-            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
 
-        .pricing-card.featured {
-            border-color: var(--primary);
-            box-shadow: 0 4px 16px var(--shadow);
-            transform: scale(1.05);
+        .price-card.featured {
+            border: 1px solid var(--primary);
+            background: linear-gradient(to bottom, rgba(59, 130, 246, 0.1), rgba(0,0,0,0));
         }
 
-        .pricing-card h3 {
-            margin-top: 0;
+        .price-card.featured::before {
+            content: "RECOMMENDED";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
         }
 
         .price {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 700;
-            color: var(--primary);
-            margin: 1rem 0;
+            margin: 1.5rem 0;
+            color: white;
         }
 
-        .price-period {
+        .period {
             font-size: 1rem;
-            color: var(--text-light);
-            font-weight: normal;
+            color: var(--text-muted);
+            font-weight: 400;
         }
 
         /* Footer */
         footer {
-            background: var(--text);
-            color: white;
-            padding: 3rem 2rem;
-            margin-top: 4rem;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-        }
-
-        .footer-section h4 {
-            color: white;
-            margin-bottom: 1rem;
-        }
-
-        .footer-section a {
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            display: block;
-            margin-bottom: 0.5rem;
-            transition: color 0.3s;
-        }
-
-        .footer-section a:hover {
-            color: white;
-        }
-
-        .footer-bottom {
+            border-top: 1px solid var(--border);
+            padding: 4rem 2rem;
             text-align: center;
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--text-muted);
+            background: #000;
         }
 
-        /* Responsive */
+        /* Mobile */
         @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2rem;
-            }
-
-            .hero p {
-                font-size: 1rem;
-            }
-
-            .nav-links {
-                flex-direction: column;
-                gap: 1rem;
-                width: 100%;
-                margin-top: 1rem;
-            }
-
-            .pricing-card.featured {
-                transform: scale(1);
-            }
-
-            h2 {
-                font-size: 2rem;
-            }
-        }
-
-        /* Utility Classes */
-        .text-center {
-            text-align: center;
-        }
-
-        .mt-2 {
-            margin-top: 2rem;
-        }
-
-        .mb-2 {
-            margin-bottom: 2rem;
-        }
-
-        .highlight {
-            background: #fff3cd;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
+            .hero h1 { font-size: 3rem; }
+            .nav-links { display: none; }
         }
     </style>
 </head>
 
 <body>
-    <!-- Navigation -->
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow-2"></div>
+
     <nav>
-        <div class="logo">Autonoma</div>
+        <div class="logo">
+           AUTONOMA
+        </div>
         <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="mailto:visuvalingamvithushan@gmail.com">Contact</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#security">Security</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#install" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Get Started</a></li>
         </ul>
     </nav>
 
-    <!-- Hero Section -->
     <section class="hero">
-        <h1>Autonoma</h1>
-        <p class="subtitle">The World's First <span class="highlight">L5 Autonomous Code Engineer</span>.</p>
-        <p class="subtitle" style="font-size: 1.1rem; margin-top: -1rem;">It doesn't just review code. It fixes it.</p>
+        <span class="hero-badge">v1.0 Pilot Edition Released</span>
+        <h1>
+            Autonomous Engineering.<br>
+            <span>Air-Gapped Privacy.</span>
+        </h1>
+        <p class="hero-subtitle">
+            The world's first L5 Autonomous Code Engineer that runs locally. <br>
+            It doesn't just review code. It fixes it. Without sending data to the cloud.
+        </p>
         <div class="hero-buttons">
-            <a href="install.ps1" class="btn btn-primary">Download Free (L3)</a>
-            <a href="pricing.html" class="btn btn-secondary">Enterprise (L5)</a>
-        </div>
-        <div class="trust-bullets">
-            <span>L5 Autonomy Engine</span>
-            <span>Cryptographic Flight Recorder</span>
-            <span>100% Air-Gapped Deployment</span>
-        </div>
-    </section>
-
-    <!-- Problem Section -->
-    <section class="problem-section">
-        <div class="container">
-            <h2>The Risk of "Assisted" Coding</h2>
-            <p>Copilots generate code faster than humans can review it. This creates a new debt crisis.</p>
-
-            <h3>1. The "Lazy Review" Effect</h3>
-            <ul>
-                <li>Developers blindly accept AI suggestions without understanding the logic.</li>
-                <li>Bugs are introduced 10x faster than before.</li>
-                <li>Security vulnerabilities (XSS, SQLi) are often hallucinated into production.</li>
-            </ul>
-
-            <h3>2. Data Sovereignty Violations</h3>
-            <ul>
-                <li>Sending IP to Public Cloud APIs (OpenAI, Anthropic) violates GDPR & SOC2.</li>
-                <li>No audit trail of exactly *what* was sent to the model.</li>
-                <li>Legal departments are banning cloud-based coding assistants.</li>
-            </ul>
-
-            <h3>3. Operational Fragility</h3>
-            <ul>
-                <li>Cloud APIs go down. Latency spikes.</li>
-                <li>Vendor lock-in: You don't own the brain.</li>
-                <li>Costs spiral out of control ($30/user/month becomes $30k/year instantly).</li>
-            </ul>
-        </div>
-    </section>
-
-    <!-- Solution Section -->
-    <section class="solution-section">
-        <div class="container">
-            <h2>Local Inference Architecture</h2>
-
-            <h3>On-device execution</h3>
-            <ul>
-                <li>All AST parsing via tree-sitter (Python, JavaScript, Java, C++, Go, Rust)</li>
-                <li>Local LLM inference via Ollama (Llama 3, Mistral, or custom models)</li>
-                <li>Symbolic execution engine for mathematical security analysis</li>
-                <li>No network calls required for analysis</li>
-            </ul>
-
-            <h3>Hardware requirements</h3>
-            <ul>
-                <li>CPU: x86-64 or ARM64</li>
-                <li>RAM: 4GB minimum (8GB recommended for local LLM)</li>
-                <li>Disk: 2GB for models and dependencies</li>
-                <li>No GPU required (CPU inference supported)</li>
-            </ul>
-
-            <h3>I/O patterns</h3>
-            <ul>
-                <li>File system reads only (no network writes)</li>
-                <li>ChromaDB for local RAG indexing (embeddings stored locally)</li>
-                <li>SQLite for audit logs and configuration</li>
-                <li>Zero outbound connections in local-only mode</li>
-            </ul>
-
-            <h3>Model support</h3>
-            <ul>
-                <li>Local: Llama 3 (8B/70B), Mistral, custom Ollama models</li>
-                <li>Optional cloud fallback: GPT-4, Claude (requires explicit opt-in and API key)</li>
-                <li>Hybrid routing: sensitive files blocked from cloud transmission</li>
-            </ul>
-        </div>
-    </section>
-
-    <!-- Key Features -->
-    <section id="features" class="container">
-        <h2 class="text-center">The Autonomous Architecture</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>The Daemon (L5 Engine)</h3>
-                <h4>Active Correction</h4>
-                <ul>
-                    <li>Runs as a background service in your secure VPC.</li>
-                    <li>Analyzing every keystroke via Tree-Sitter & Local LLM.</li>
-                    <li><strong>Self-Healing:</strong> Doesn't just find bugs—it writes the patch.</li>
-                    <li>Zero Latency: decisions made in &lt;300ms locally.</li>
-                </ul>
-            </div>
-
-            <div class="feature-card">
-                <h3>The Flight Recorder</h3>
-                <h4>Cryptographic Audit Logs</h4>
-                <ul>
-                    <li>Every AI decision is logged, hashed, and signed.</li>
-                    <li>Forensic replay: See exactly *why* the AI made a change.</li>
-                    <li><strong>Compliance Ready:</strong> Maps issues to SOC2, GDPR, OWASP.</li>
-                    <li>"If it isn't logged, it didn't happen."</li>
-                </ul>
-            </div>
-
-            <div class="feature-card">
-                <h3>The Governance Firewall</h3>
-                <h4>Human-in-the-Loop Protocol</h4>
-                <ul>
-                    <li>Junior devs can't merge AI code without Senior approval.</li>
-                    <li>Role-Based Access Control (RBAC) built-in.</li>
-                    <li>Prevents "Hallucinated" dependencies from entering the build.</li>
-                    <li>Enforces your specific engineering standards.</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- Why This Beats Cloud -->
-    <section class="container">
-        <h2 class="text-center">Why This Beats Cloud Reviewers</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>Latency</h3>
-                <ul>
-                    <li>Local analysis: 270ms P95 (no network round-trip)</li>
-                    <li>Cloud analysis: 500-1000ms P95 (network + API processing)</li>
-                    <li>2-4x faster for local-only mode</li>
-                </ul>
-            </div>
-            <div class="feature-card">
-                <h3>Reliability</h3>
-                <ul>
-                    <li>No API rate limits</li>
-                    <li>No circuit breaker required</li>
-                    <li>Works offline (air-gapped environments)</li>
-                    <li>No vendor lock-in</li>
-                </ul>
-            </div>
-            <div class="feature-card">
-                <h3>Privacy</h3>
-                <ul>
-                    <li>Zero data exfiltration risk</li>
-                    <li>No third-party data retention</li>
-                    <li>Full audit trail of all analysis</li>
-                    <li>Compliance team verification possible</li>
-                </ul>
-            </div>
-            <div class="feature-card">
-                <h3>Cost</h3>
-                <ul>
-                    <li>No per-request API costs</li>
-                    <li>No token usage limits</li>
-                    <li>Predictable infrastructure costs (local compute only)</li>
-                    <li>No surprise bills</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- Security & Compliance -->
-    <section id="security" class="container">
-        <h2>Security & Compliance</h2>
-        <h3>Threat Model</h3>
-        <h4>Attack surface</h4>
-        <ul>
-            <li>Local daemon listens on 127.0.0.1:8000 (localhost only)</li>
-            <li>No inbound network connections accepted</li>
-            <li>VS Code extension communicates via HTTP (local only)</li>
-            <li>CLI tool runs in-process (no network calls)</li>
-        </ul>
-        <h4>Data flow</h4>
-        <ul>
-            <li>Code → AST parser (local)</li>
-            <li>AST → Symbolic engine (local)</li>
-            <li>AST → Local LLM (local, via Ollama)</li>
-            <li>Optional: AST → Cloud LLM (requires explicit opt-in, API key required)</li>
-            <li>Results → VS Code extension (local HTTP)</li>
-            <li>Results → Audit log (local SQLite)</li>
-        </ul>
-        <h4>No telemetry</h4>
-        <ul>
-            <li>Zero outbound analytics</li>
-            <li>No usage tracking</li>
-            <li>No error reporting to external servers</li>
-            <li>All logs stored locally</li>
-        </ul>
-    </section>
-
-    <!-- Performance Benchmarks -->
-    <section class="container">
-        <h2>Performance Benchmarks</h2>
-        <h3>Latency Metrics</h3>
-        <p><strong>Test environment:</strong> Intel i7-12700K / Apple M1, 16GB RAM, Windows 11 / macOS 13</p>
-        <ul>
-            <li>P50 latency: 180ms per file</li>
-            <li>P95 latency: 270ms per file</li>
-            <li>P99 latency: 420ms per file</li>
-        </ul>
-        <h4>Breakdown</h4>
-        <ul>
-            <li>AST parsing: 50ms</li>
-            <li>Symbolic execution: 80ms</li>
-            <li>Local LLM inference: 120ms (Llama 3 8B)</li>
-            <li>RAG context retrieval: 20ms</li>
-        </ul>
-        <h3>Throughput</h3>
-        <ul>
-            <li>100 files processed in 28 seconds</li>
-            <li>1,000 files processed in 4.2 minutes</li>
-            <li>Memory usage: &lt;50MB RSS for daemon process</li>
-        </ul>
-    </section>
-
-    <!-- How Teams Deploy -->
-    <section class="container">
-        <h2>How Teams Deploy</h2>
-        <h3>3-Step Onboarding</h3>
-        <h4>Step 1: Install</h4>
-        <pre><code># Windows
-.\install.ps1
-
-# Linux/macOS
-./installer.sh</code></pre>
-        <h4>Step 2: Configure</h4>
-        <ul>
-            <li>Open VS Code Settings</li>
-            <li>Search "Hybrid Reviewer"</li>
-            <li>Set model preference (local/cloud/auto)</li>
-            <li>Configure SSO (if Enterprise tier)</li>
-        </ul>
-        <h4>Step 3: Analyze</h4>
-        <ul>
-            <li>Open project in VS Code</li>
-            <li>Extension auto-analyzes on file save</li>
-            <li>View issues in Problems panel</li>
-            <li>Apply fixes via CodeActions</li>
-        </ul>
-    </section>
-
-    <!-- Pricing -->
-    <section id="pricing" class="container">
-        <h2 class="text-center">Pricing</h2>
-        <div class="pricing-grid">
-            <div class="pricing-card">
-                <h3>Community</h3>
-                <div class="price">Free<span class="price-period">/forever</span></div>
-                <ul style="text-align: left; list-style: none; margin-left: 0;">
-                    <li>✓ Local analysis only</li>
-                    <li>✓ VS Code extension</li>
-                    <li>✓ CLI tool</li>
-                    <li>✓ Basic compliance mapping</li>
-                    <li>✓ Community support</li>
-                </ul>
-                <a href="install.ps1" class="btn btn-primary" style="margin-top: 1.5rem; display: block;">Download</a>
-            </div>
-            <div class="pricing-card featured">
-                <h3>Commercial Pilot</h3>
-                <div class="price">Custom<span class="price-period"></span></div>
-                <ul style="text-align: left; list-style: none; margin-left: 0;">
-                    <li>✓ All Community features</li>
-                    <li>✓ Cloud LLM integration</li>
-                    <li>✓ 14-Day Pilot License</li>
-                    <li>✓ Advanced compliance reports</li>
-                    <li>✓ Priority support</li>
-                </ul>
-                <a href="mailto:visuvalingamvithushan@gmail.com" class="btn btn-primary"
-                    style="margin-top: 1.5rem; display: block;">Request Access</a>
-            </div>
-        </div>
-        <p class="text-center mt-2"><strong>SOC2 packages:</strong> Contact sales for SOC2 Type II audit reports,
-            dedicated support, and custom deployment options.</p>
-    </section>
-
-    <!-- Final CTA -->
-    <section id="get-started" class="hero" style="padding: 4rem 2rem;">
-        <h2>Start analyzing code locally today.</h2>
-        <div class="cta-buttons">
-            <a href="install.ps1" class="btn btn-primary">Download Installer</a>
-            <a href="https://github.com/CloudVithu/hybrid_local_ai_code_reviewer" class="btn btn-secondary">View
-                Documentation</a>
+            <a href="#install" class="btn btn-primary">Start Engine (Free)</a>
             <a href="mailto:visuvalingamvithushan@gmail.com" class="btn btn-secondary">Contact Sales</a>
         </div>
-        <p style="margin-top: 1rem; opacity: 0.9;">No credit card required. Install in 2 minutes.</p>
+        <div style="display: flex; gap: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+            <span>✓ SOC2 Compliant</span>
+            <span>✓ On-Premise</span>
+            <span>✓ Zero Telemetry</span>
+        </div>
     </section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Product</h4>
-                <a href="#features">Features</a>
-                <a href="#security">Security</a>
-                <a href="https://github.com/CloudVithu/hybrid_local_ai_code_reviewer">Documentation</a>
+    <section id="features" class="container">
+        <div class="section-header">
+            <h2>L5 Autonomy Suite</h2>
+            <p>A complete engineering team in a single binary.</p>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <h3>⚡ The Daemon</h3>
+                <p>Runs as a local background service. Analyzes keystrokes in real-time using Tree-Sitter and local quantization-optimized LLMs.</p>
+                <ul class="card-list">
+                    <li>&lt;300ms Latency</li>
+                    <li>No API Keys needed</li>
+                    <li>Works offline</li>
+                </ul>
             </div>
-            <div class="footer-section">
-                <h4>Company</h4>
-                <a href="mailto:visuvalingamvithushan@gmail.com">Contact</a>
+            <div class="card">
+                <h3>🔒 Flight Recorder</h3>
+                <p>Cryptographic ledger of every AI decision. If the AI breaks something, you can replay the logic step-by-step.</p>
+                <ul class="card-list">
+                    <li>SHA-256 Signed Logs</li>
+                    <li>Forensic Replay</li>
+                    <li>Audit Ready</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>🛡️ Governance Firewall</h3>
+                <p>Prevent hallucinated code from reaching production. Define strict rules that the AI must follow before committing.</p>
+                <ul class="card-list">
+                    <li>RBAC Controls</li>
+                    <li>Complexity Limits</li>
+                    <li>Dependency Scanning</li>
+                </ul>
             </div>
         </div>
-        <div class="footer-bottom">
-            <p>© 2025 Autonoma AI. All rights reserved.</p>
-        </div>
-    </footer>
-</body>
+    </section>
 
+    <section id="install" class="install-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Install Autonoma</h2>
+                <p>Get running in seconds. No docker required for Community Edition.</p>
+            </div>
+            
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('win')">Windows (PowerShell)</button>
+                    <button class="tab-btn" onclick="switchTab('nix')">Linux / MacOS</button>
+                </div>
+                <div class="terminal-body">
+                    <!-- Windows Tab -->
+                    <div id="win-cmd" class="install-cmd active">
+                        <div class="cmd-line">
+                            <span class="prompt">></span>
+                            <code class="command">irm vihaaninnovations.github.io/autonoma/install.ps1 | iex</code>
+                            <button class="copy-btn" onclick="copyCmd('irm vihaaninnovations.github.io/autonoma/install.ps1 | iex')">Copy</button>
+                        </div>
+                        <p style="color: #666; font-size: 0.9rem;">
+                            Or download the script manually: <a href="install.ps1" class="direct-link">Download install.ps1</a>
+                        </p>
+                    </div>
+
+                    <!-- Linux Tab -->
+                    <div id="nix-cmd" class="install-cmd">
+                        <div class="cmd-line">
+                            <span class="prompt">$</span>
+                            <code class="command">curl -sSL vihaaninnovations.github.io/autonoma/install.sh | bash</code>
+                            <button class="copy-btn" onclick="copyCmd('curl -sSL vihaaninnovations.github.io/autonoma/install.sh | bash')">Copy</button>
+                        </div>
+                        <p style="color: #666; font-size: 0.9rem;">
+                            Or download the script manually: <a href="install.sh" class="direct-link">Download install.sh</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="container">
+        <div class="section-header">
+            <h2>Pricing Models</h2>
+            <p>Fair pricing for individuals and enterprises.</p>
+        </div>
+        <div class="grid">
+            <div class="card price-card">
+                <h3>Community</h3>
+                <div class="price">Free</div>
+                <p class="period">Forever</p>
+                <ul class="card-list">
+                    <li>Local Analysis Only</li>
+                    <li>VS Code Extension</li>
+                    <li>Basic Compliance Logs</li>
+                </ul>
+                <a href="#install" class="btn btn-secondary" style="width: 100%; margin-top: 2rem;">Download</a>
+            </div>
+            <div class="card price-card featured">
+                <h3>Commercial Pilot</h3>
+                <div class="price">$499</div>
+                <p class="period">per month</p>
+                <ul class="card-list">
+                    <li>Everything in Community</li>
+                    <li>Cloud LLM Fallback (Opt-in)</li>
+                    <li>Advanced Reporting</li>
+                    <li>Priority Support</li>
+                </ul>
+                <a href="mailto:visuvalingamvithushan@gmail.com?subject=Autonoma%20Pilot%20Request" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">Request Access</a>
+            </div>
+            <div class="card price-card">
+                <h3>Enterprise Core</h3>
+                <div class="price">Custom</div>
+                <p class="period">Annual Contract</p>
+                <ul class="card-list">
+                    <li>Full Air-Gap Control</li>
+                    <li>Custom Model Training</li>
+                    <li>Dedicated Solutions Engineer</li>
+                    <li>SLA Guarantees</li>
+                </ul>
+                <a href="mailto:visuvalingamvithushan@gmail.com?subject=Enterprise%20Inquiry" class="btn btn-secondary" style="width: 100%; margin-top: 2rem;">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2025 Autonoma AI. All rights reserved.</p>
+        <p style="font-size: 0.8rem; margin-top: 1rem; color: #444;">
+            <a href="terms.html" style="color: #666; text-decoration: none; margin: 0 10px;">Terms</a> |
+            <a href="privacy.html" style="color: #666; text-decoration: none; margin: 0 10px;">Privacy</a> |
+            <a href="https://github.com/vihaaninnovations/autonoma" style="color: #666; text-decoration: none; margin: 0 10px;">GitHub</a>
+        </p>
+    </footer>
+
+    <script>
+        function switchTab(os) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.install-cmd').forEach(c => c.classList.remove('active'));
+            
+            if(os === 'win') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('win-cmd').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('nix-cmd').classList.add('active');
+            }
+        }
+
+        function copyCmd(text) {
+            navigator.clipboard.writeText(text);
+            alert('Command copied to clipboard!');
+        }
+    </script>
+</body>
 </html>
