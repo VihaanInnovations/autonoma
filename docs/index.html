@@ -100,7 +100,7 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .logo img {
             height: 32px;
             width: auto;
@@ -281,7 +281,7 @@
 
         /* Installation Section */
         .install-section {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgwem0yMCAyMGgyMHYyMEgyMHptLTIwIDBoMjB2MjBIMHoiIGZpbGw9IiMzMzMiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==');
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgwem0yMCAyMGgyMHYyMEgyMHptLTIwIDBoMjB2MjBIMHoiIGZpbGw9IiMzMzMiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==');
             padding: 6rem 0;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
@@ -312,9 +312,17 @@
             border-radius: 50%;
         }
 
-        .dot.red { background: #ff5f56; }
-        .dot.yellow { background: #ffbd2e; }
-        .dot.green { background: #27c93f; }
+        .dot.red {
+            background: #ff5f56;
+        }
+
+        .dot.yellow {
+            background: #ffbd2e;
+        }
+
+        .dot.green {
+            background: #27c93f;
+        }
 
         .terminal-body {
             padding: 2rem;
@@ -337,11 +345,14 @@
             transition: all 0.2s;
         }
 
-        .tab-btn:hover { color: #fff; }
+        .tab-btn:hover {
+            color: #fff;
+        }
+
         .tab-btn.active {
             color: #fff;
             border-bottom: 2px solid var(--primary);
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .install-cmd {
@@ -357,15 +368,21 @@
             display: flex;
             gap: 1rem;
             align-items: center;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
             padding: 1rem;
             border-radius: 6px;
             margin-bottom: 1rem;
         }
 
-        .prompt { color: var(--accent); user-select: none; }
-        .command { flex-grow: 1; }
-        
+        .prompt {
+            color: var(--accent);
+            user-select: none;
+        }
+
+        .command {
+            flex-grow: 1;
+        }
+
         .copy-btn {
             background: transparent;
             border: 1px solid #555;
@@ -375,8 +392,11 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        
-        .copy-btn:hover { color: #fff; border-color: #fff; }
+
+        .copy-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
 
         .direct-link {
             color: var(--primary);
@@ -385,8 +405,10 @@
             display: block;
             margin-top: 0.5rem;
         }
-        
-        .direct-link:hover { text-decoration: underline; }
+
+        .direct-link:hover {
+            text-decoration: underline;
+        }
 
         /* Pricing */
         .price-card {
@@ -397,7 +419,7 @@
 
         .price-card.featured {
             border: 1px solid var(--primary);
-            background: linear-gradient(to bottom, rgba(59, 130, 246, 0.1), rgba(0,0,0,0));
+            background: linear-gradient(to bottom, rgba(59, 130, 246, 0.1), rgba(0, 0, 0, 0));
         }
 
         .price-card.featured::before {
@@ -439,8 +461,13 @@
 
         /* Mobile */
         @media (max-width: 768px) {
-            .hero h1 { font-size: 3rem; }
-            .nav-links { display: none; }
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -451,13 +478,14 @@
 
     <nav>
         <div class="logo">
-           AUTONOMA
+            AUTONOMA
         </div>
         <ul class="nav-links">
             <li><a href="#features">Features</a></li>
             <li><a href="#security">Security</a></li>
             <li><a href="#pricing">Pricing</a></li>
-            <li><a href="#install" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Get Started</a></li>
+            <li><a href="#install" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Get
+                    Started</a></li>
         </ul>
     </nav>
 
@@ -475,6 +503,59 @@
             <a href="#install" class="btn btn-primary">Start Engine (Free)</a>
             <a href="mailto:visuvalingamvithushan@gmail.com" class="btn btn-secondary">Contact Sales</a>
         </div>
+        <section id="install" class="install-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Install Autonoma</h2>
+                    <p>Get running in seconds. Community Edition (L3) is Free.</p>
+                </div>
+
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab('win')">Windows (PowerShell)</button>
+                        <button class="tab-btn" onclick="switchTab('nix')">Linux / MacOS</button>
+                    </div>
+                    <div class="terminal-body">
+                        <!-- Windows Tab -->
+                        <div id="win-cmd" class="install-cmd active">
+                            <div class="cmd-line">
+                                <span class="prompt">></span>
+                                <code
+                                    class="command">irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex</code>
+                                <button class="copy-btn"
+                                    onclick="copyCmd('irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex')">Copy</button>
+                            </div>
+                            <p style="color: #666; font-size: 0.9rem;">
+                                Or download the script manually: <a
+                                    href="https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1"
+                                    class="direct-link">Download install.ps1</a>
+                            </p>
+                        </div>
+
+                        <!-- Linux Tab -->
+                        <div id="nix-cmd" class="install-cmd">
+                            <div class="cmd-line">
+                                <span class="prompt">$</span>
+                                <code
+                                    class="command">curl -sSL https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh | bash</code>
+                                <button class="copy-btn"
+                                    onclick="copyCmd('curl -sSL https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh | bash')">Copy</button>
+                            </div>
+                            <p style="color: #666; font-size: 0.9rem;">
+                                Or download the script manually: <a
+                                    href="https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh"
+                                    class="direct-link">Download install.sh</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
         <div style="display: flex; gap: 2rem; color: var(--text-muted); font-size: 0.9rem;">
             <span>✓ SOC2 Compliant</span>
             <span>✓ On-Premise</span>
@@ -490,7 +571,8 @@
         <div class="grid">
             <div class="card">
                 <h3>⚡ The Daemon</h3>
-                <p>Runs as a local background service. Analyzes keystrokes in real-time using Tree-Sitter and local quantization-optimized LLMs.</p>
+                <p>Runs as a local background service. Analyzes keystrokes in real-time using Tree-Sitter and local
+                    quantization-optimized LLMs.</p>
                 <ul class="card-list">
                     <li>&lt;300ms Latency</li>
                     <li>No API Keys needed</li>
@@ -499,7 +581,8 @@
             </div>
             <div class="card">
                 <h3>🔒 Flight Recorder</h3>
-                <p>Cryptographic ledger of every AI decision. If the AI breaks something, you can replay the logic step-by-step.</p>
+                <p>Cryptographic ledger of every AI decision. If the AI breaks something, you can replay the logic
+                    step-by-step.</p>
                 <ul class="card-list">
                     <li>SHA-256 Signed Logs</li>
                     <li>Forensic Replay</li>
@@ -508,7 +591,8 @@
             </div>
             <div class="card">
                 <h3>🛡️ Governance Firewall</h3>
-                <p>Prevent hallucinated code from reaching production. Define strict rules that the AI must follow before committing.</p>
+                <p>Prevent hallucinated code from reaching production. Define strict rules that the AI must follow
+                    before committing.</p>
                 <ul class="card-list">
                     <li>RBAC Controls</li>
                     <li>Complexity Limits</li>
@@ -524,7 +608,7 @@
                 <h2>Install Autonoma</h2>
                 <p>Get running in seconds. No docker required for Community Edition.</p>
             </div>
-            
+
             <div class="terminal-window">
                 <div class="terminal-header">
                     <div class="dot red"></div>
@@ -540,11 +624,15 @@
                     <div id="win-cmd" class="install-cmd active">
                         <div class="cmd-line">
                             <span class="prompt">></span>
-                            <code class="command">irm vihaaninnovations.github.io/autonoma/install.ps1 | iex</code>
-                            <button class="copy-btn" onclick="copyCmd('irm vihaaninnovations.github.io/autonoma/install.ps1 | iex')">Copy</button>
+                            <code
+                                class="command">irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex</code>
+                            <button class="copy-btn"
+                                onclick="copyCmd('irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex')">Copy</button>
                         </div>
                         <p style="color: #666; font-size: 0.9rem;">
-                            Or download the script manually: <a href="install.ps1" class="direct-link">Download install.ps1</a>
+                            Or download the script manually: <a
+                                href="https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1"
+                                class="direct-link">Download install.ps1</a>
                         </p>
                     </div>
 
@@ -552,11 +640,15 @@
                     <div id="nix-cmd" class="install-cmd">
                         <div class="cmd-line">
                             <span class="prompt">$</span>
-                            <code class="command">curl -sSL vihaaninnovations.github.io/autonoma/install.sh | bash</code>
-                            <button class="copy-btn" onclick="copyCmd('curl -sSL vihaaninnovations.github.io/autonoma/install.sh | bash')">Copy</button>
+                            <code
+                                class="command">curl -sSL https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh | bash</code>
+                            <button class="copy-btn"
+                                onclick="copyCmd('curl -sSL https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh | bash')">Copy</button>
                         </div>
                         <p style="color: #666; font-size: 0.9rem;">
-                            Or download the script manually: <a href="install.sh" class="direct-link">Download install.sh</a>
+                            Or download the script manually: <a
+                                href="https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh"
+                                class="direct-link">Download install.sh</a>
                         </p>
                     </div>
                 </div>
@@ -579,7 +671,7 @@
                     <li>VS Code Extension</li>
                     <li>Basic Compliance Logs</li>
                 </ul>
-                <a href="#install" class="btn btn-secondary" style="width: 100%; margin-top: 2rem;">Download</a>
+                <a href="#install" class="btn btn-primary" style="margin-top: 1.5rem; display: block;">Download</a>
             </div>
             <div class="card price-card featured">
                 <h3>Commercial Pilot</h3>
@@ -591,7 +683,8 @@
                     <li>Advanced Reporting</li>
                     <li>Priority Support</li>
                 </ul>
-                <a href="mailto:visuvalingamvithushan@gmail.com?subject=Autonoma%20Pilot%20Request" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">Request Access</a>
+                <a href="mailto:visuvalingamvithushan@gmail.com?subject=Autonoma%20Pilot%20Request"
+                    class="btn btn-primary" style="width: 100%; margin-top: 2rem;">Request Access</a>
             </div>
             <div class="card price-card">
                 <h3>Enterprise Core</h3>
@@ -603,7 +696,8 @@
                     <li>Dedicated Solutions Engineer</li>
                     <li>SLA Guarantees</li>
                 </ul>
-                <a href="mailto:visuvalingamvithushan@gmail.com?subject=Enterprise%20Inquiry" class="btn btn-secondary" style="width: 100%; margin-top: 2rem;">Contact Sales</a>
+                <a href="mailto:visuvalingamvithushan@gmail.com?subject=Enterprise%20Inquiry" class="btn btn-secondary"
+                    style="width: 100%; margin-top: 2rem;">Contact Sales</a>
             </div>
         </div>
     </section>
@@ -613,7 +707,8 @@
         <p style="font-size: 0.8rem; margin-top: 1rem; color: #444;">
             <a href="terms.html" style="color: #666; text-decoration: none; margin: 0 10px;">Terms</a> |
             <a href="privacy.html" style="color: #666; text-decoration: none; margin: 0 10px;">Privacy</a> |
-            <a href="https://github.com/vihaaninnovations/autonoma" style="color: #666; text-decoration: none; margin: 0 10px;">GitHub</a>
+            <a href="https://github.com/vihaaninnovations/autonoma"
+                style="color: #666; text-decoration: none; margin: 0 10px;">GitHub</a>
         </p>
     </footer>
 
@@ -621,8 +716,8 @@
         function switchTab(os) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.install-cmd').forEach(c => c.classList.remove('active'));
-            
-            if(os === 'win') {
+
+            if (os === 'win') {
                 document.querySelectorAll('.tab-btn')[0].classList.add('active');
                 document.getElementById('win-cmd').classList.add('active');
             } else {
@@ -637,4 +732,5 @@
         }
     </script>
 </body>
+
 </html>
