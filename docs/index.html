@@ -526,9 +526,9 @@
                             <div class="cmd-line">
                                 <span class="prompt">></span>
                                 <code
-                                    class="command">irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex</code>
+                                    class="command">[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex</code>
                                 <button class="copy-btn"
-                                    onclick="copyCmd('irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex')">Copy</button>
+                                    onclick="copyCmd('[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex')">Copy</button>
                             </div>
                             <p style="color: #666; font-size: 0.9rem;">
                                 Or download the script manually: <a
@@ -651,9 +651,9 @@
                         <div class="cmd-line">
                             <span class="prompt">></span>
                             <code
-                                class="command">irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex</code>
+                                class="command">[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex</code>
                             <button class="copy-btn"
-                                onclick="copyCmd('irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex')">Copy</button>
+                                onclick="copyCmd('[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.ps1 | iex')">Copy</button>
                         </div>
                         <p style="color: #666; font-size: 0.9rem;">
                             Or download the script manually: <a

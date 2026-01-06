@@ -4,6 +4,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Check prerequisites
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Write-Host "Checking prerequisites..." -ForegroundColor Yellow
 
 # Check Python
