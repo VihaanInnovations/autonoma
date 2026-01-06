@@ -31,7 +31,7 @@ try {
     Write-Host "✓ VS Code found: $codeVersion" -ForegroundColor Green
 } catch {
     Write-Host "⚠ VS Code CLI not found. Extension will be packaged but not auto-installed." -ForegroundColor Yellow
-    Write-Host "  You can install it manually: code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix" -ForegroundColor Yellow
+    Write-Host "  You can install it manually: code --install-extension autonoma-ai-reviewer-1.0.0.vsix" -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -148,18 +148,18 @@ Write-Host "✓ Extension packaged successfully" -ForegroundColor Green
 # Install extension if VS Code CLI is available
 if (Get-Command code -ErrorAction SilentlyContinue) {
     Write-Host "Installing extension to VS Code..." -ForegroundColor Cyan
-    code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix
+    code --install-extension autonoma-ai-reviewer-1.0.0.vsix
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "✓ Extension installed successfully" -ForegroundColor Green
         Write-Host "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')" -ForegroundColor Cyan
     } else {
         Write-Host "⚠ Extension packaged but not installed. Install manually:" -ForegroundColor Yellow
-        Write-Host "  code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix" -ForegroundColor Yellow
+        Write-Host "  code --install-extension autonoma-ai-reviewer-1.0.0.vsix" -ForegroundColor Yellow
     }
 } else {
     Write-Host "⚠ VS Code CLI not found. Extension packaged but not installed." -ForegroundColor Yellow
-    Write-Host "  Install manually: code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix" -ForegroundColor Yellow
+    Write-Host "  Install manually: code --install-extension autonoma-ai-reviewer-1.0.0.vsix" -ForegroundColor Yellow
 }
 
 Write-Host ""

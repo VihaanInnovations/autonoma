@@ -38,7 +38,7 @@ if command -v code &> /dev/null; then
     VSCODE_AVAILABLE=true
 else
     echo "⚠ VS Code CLI not found. Extension will be packaged but not auto-installed."
-    echo "  You can install it manually: code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix"
+    echo "  You can install it manually: code --install-extension autonoma-ai-reviewer-1.0.0.vsix"
     VSCODE_AVAILABLE=false
 fi
 
@@ -160,18 +160,18 @@ echo "✓ Extension packaged successfully"
 # Install extension if VS Code CLI is available
 if [ "$VSCODE_AVAILABLE" = true ]; then
     echo "Installing extension to VS Code..."
-    code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix
+    code --install-extension autonoma-ai-reviewer-1.0.0.vsix
     
     if [ $? -eq 0 ]; then
         echo "✓ Extension installed successfully"
         echo "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')"
     else
         echo "⚠ Extension packaged but not installed. Install manually:"
-        echo "  code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix"
+        echo "  code --install-extension autonoma-ai-reviewer-1.0.0.vsix"
     fi
 else
     echo "⚠ VS Code CLI not found. Extension packaged but not installed."
-    echo "  Install manually: code --install-extension hybrid-local-ai-code-reviewer-1.0.0.vsix"
+    echo "  Install manually: code --install-extension autonoma-ai-reviewer-1.0.0.vsix"
 fi
 
 echo ""
