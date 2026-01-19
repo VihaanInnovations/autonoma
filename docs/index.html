@@ -95,6 +95,7 @@
             font-weight: 700;
             background: linear-gradient(to right, var(--primary), var(--accent));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
@@ -183,6 +184,7 @@
             display: block;
             background: linear-gradient(to right, #fff, #a5b4fc);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -490,7 +492,7 @@
     </nav>
 
     <section class="hero">
-        <span class="hero-badge">v1.0 Pilot Edition Released</span>
+        <span class="hero-badge">v1.0 Enterprise Edition Released</span>
         <h1>
             Autonomous Engineering.<br>
             <span>Air-Gapped Privacy.</span>
@@ -602,6 +604,40 @@
         </div>
     </section>
 
+    <section id="enterprise-features" class="container">
+        <div class="section-header">
+            <h2>Enterprise Capabilities</h2>
+            <p>New in v1.0: Advanced Compliance & Reporting.</p>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <h3>📝 Custom Rules</h3>
+                <p>Enforce corporate policies (e.g., banning `eval()`) using simple YAML configurations.</p>
+                <ul class="card-list">
+                    <li>Repo-level <code>compliance_rules.yaml</code></li>
+                    <li>Regex & Wildcard Support</li>
+                    <li>Critical Severity Blocks</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>📄 PDF Audit Reports</h3>
+                <p>Generate glossy, audit-ready PDF reports for stakeholders and compliance officers.</p>
+                <ul class="card-list">
+                    <li>Executive Summary</li>
+                    <li>Licensed Branding</li>
+                    <li>Severity Breakdown</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>📦 Pip & Docker</h3>
+                <p>Deploy anywhere using standard Python tooling or isolated Docker containers.</p>
+                <ul class="card-list">
+                    <li><code>pip install .</code></li>
+                    <li><code>docker run autonoma</code></li>
+                    <li>Air-Gap Ready</li>
+                </ul>
+            </div>
+        </div>
     </section>
 
     <section id="security" class="container">
@@ -644,6 +680,7 @@
                 <div class="tab-buttons">
                     <button class="tab-btn active" onclick="switchTab('win')">Windows (PowerShell)</button>
                     <button class="tab-btn" onclick="switchTab('nix')">Linux / MacOS</button>
+                    <button class="tab-btn" onclick="switchTab('pip')">Python (Universal)</button>
                 </div>
                 <div class="terminal-body">
                     <!-- Windows Tab -->
@@ -671,14 +708,23 @@
                             <button class="copy-btn"
                                 onclick="copyCmd('curl -sSL https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh | bash')">Copy</button>
                         </div>
+                        </p>
+                    </div>
+
+                    <!-- Python Tab -->
+                    <div id="pip-cmd" class="install-cmd">
+                        <div class="cmd-line">
+                            <span class="prompt">$</span>
+                            <code class="command">pip install .</code>
+                            <button class="copy-btn" onclick="copyCmd('pip install .')">Copy</button>
+                        </div>
                         <p style="color: #666; font-size: 0.9rem;">
-                            Or download the script manually: <a
-                                href="https://raw.githubusercontent.com/vihaaninnovations/autonoma/main/install.sh"
-                                class="direct-link">Download install.sh</a>
+                            Requires Python 3.9+. Download source first.
                         </p>
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </section>
 
@@ -699,19 +745,7 @@
                 </ul>
                 <a href="#install" class="btn btn-primary" style="margin-top: 1.5rem; display: block;">Download</a>
             </div>
-            <div class="card price-card featured">
-                <h3>Commercial Pilot</h3>
-                <div class="price">$499</div>
-                <p class="period">per month</p>
-                <ul class="card-list">
-                    <li>Everything in Community</li>
-                    <li>Cloud LLM Fallback (Opt-in)</li>
-                    <li>Advanced Reporting</li>
-                    <li>Priority Support</li>
-                </ul>
-                <a href="mailto:visuvalingamvithushan@gmail.com?subject=Autonoma%20Pilot%20Request"
-                    class="btn btn-primary" style="width: 100%; margin-top: 2rem;">Request Access</a>
-            </div>
+
             <div class="card price-card">
                 <h3>Enterprise Core</h3>
                 <div class="price">Custom</div>
@@ -746,9 +780,12 @@
             if (os === 'win') {
                 document.querySelectorAll('.tab-btn')[0].classList.add('active');
                 document.getElementById('win-cmd').classList.add('active');
-            } else {
+            } else if (os === 'nix') {
                 document.querySelectorAll('.tab-btn')[1].classList.add('active');
                 document.getElementById('nix-cmd').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                document.getElementById('pip-cmd').classList.add('active');
             }
         }
 
