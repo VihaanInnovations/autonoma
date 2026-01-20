@@ -31,7 +31,7 @@ try {
     Write-Host "✓ VS Code found: $codeVersion" -ForegroundColor Green
 } catch {
     Write-Host "⚠ VS Code CLI not found. Extension will be packaged but not auto-installed." -ForegroundColor Yellow
-    Write-Host "  You can install it manually: code --install-extension autonoma-ai-reviewer-1.0.0.vsix" -ForegroundColor Yellow
+    Write-Host "  You can install it manually: code --install-extension autonoma-ai-engine-1.0.0.vsix" -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -78,11 +78,20 @@ if (-not (Test-Path "venv")) {
 
 # Activate virtual environment
 Write-Host "Activating virtual environment..." -ForegroundColor Cyan
-& ".\venv\Scripts\Activate.ps1"
+if (Test-Path ".\venv\Scripts\Activate.ps1") {
+    & ".\venv\Scripts\Activate.ps1"
+} else {
+    Write-Host "⚠ Activation script not found, relying on global Python or manual activation." -ForegroundColor Yellow
+}
 
 # Install dependencies
 Write-Host "Installing Python packages..." -ForegroundColor Cyan
-pip install -r requirements.txt
+# Try using venv python explicitly if possible, else fall back to active python
+if (Test-Path ".\venv\Scripts\python.exe") {
+    & ".\venv\Scripts\python.exe" -m pip install -r requirements.txt
+} else {
+    pip install -r requirements.txt
+}
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "✗ Failed to install Python dependencies" -ForegroundColor Red
@@ -94,7 +103,11 @@ Write-Host ""
 
 # Step 2: Initialize database
 Write-Host "Step 2: Initializing database..." -ForegroundColor Yellow
-python -c "from db.db import init_db; init_db()"
+if (Test-Path ".\venv\Scripts\python.exe") {
+    & ".\venv\Scripts\python.exe" -c "from db.db import init_db; init_db()"
+} else {
+    python -c "from db.db import init_db; init_db()"
+}
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "✗ Failed to initialize database" -ForegroundColor Red
@@ -148,18 +161,18 @@ Write-Host "✓ Extension packaged successfully" -ForegroundColor Green
 # Install extension if VS Code CLI is available
 if (Get-Command code -ErrorAction SilentlyContinue) {
     Write-Host "Installing extension to VS Code..." -ForegroundColor Cyan
-    code --install-extension autonoma-ai-reviewer-1.0.0.vsix
+    code --install-extension autonoma-ai-engine-1.0.0.vsix
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "✓ Extension installed successfully" -ForegroundColor Green
         Write-Host "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')" -ForegroundColor Cyan
     } else {
         Write-Host "⚠ Extension packaged but not installed. Install manually:" -ForegroundColor Yellow
-        Write-Host "  code --install-extension autonoma-ai-reviewer-1.0.0.vsix" -ForegroundColor Yellow
+        Write-Host "  code --install-extension autonoma-ai-engine-1.0.0.vsix" -ForegroundColor Yellow
     }
 } else {
     Write-Host "⚠ VS Code CLI not found. Extension packaged but not installed." -ForegroundColor Yellow
-    Write-Host "  Install manually: code --install-extension autonoma-ai-reviewer-1.0.0.vsix" -ForegroundColor Yellow
+    Write-Host "  Install manually: code --install-extension autonoma-ai-engine-1.0.0.vsix" -ForegroundColor Yellow
 }
 
 Write-Host ""
