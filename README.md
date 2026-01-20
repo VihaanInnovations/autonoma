@@ -6,6 +6,8 @@
 [![Autonomy Level](https://img.shields.io/badge/Autonomy-L5_Verified-green.svg)](docs/L5_VERIFICATION.md)
 [![Success Rate](https://img.shields.io/badge/Fix_Rate-100%25-brightgreen.svg)](validation_output_final.txt)
 
+![Autonoma Demo](docs/media/demo.gif)
+
 ---
 
 ## 🚀 The L5 Promise: 100 Runs. 100 Fixes.
