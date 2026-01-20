@@ -41,7 +41,7 @@ if (-not (Test-Path "daemon")) {
     Write-Host "⚠ Core components not found locally." -ForegroundColor Yellow
     Write-Host "⬇ Downloading Autonoma Pilot Edition (Latest)..." -ForegroundColor Cyan
     
-    $zipUrl = "https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Pilot_Edition.zip"
+    $zipUrl = "https://github.com/vihaaninnovations/autonoma-ai.github.io/releases/latest/download/Autonoma_Pilot_Edition.zip"
     $zipPath = "Autonoma_Pilot_Edition.zip"
     
     try {

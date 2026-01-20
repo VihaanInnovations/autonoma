@@ -50,7 +50,7 @@ if [ ! -d "daemon" ]; then
     echo "⚠ Core components not found locally."
     echo "⬇ Downloading Autonoma Pilot Edition (Latest)..."
     
-    ZIP_URL="https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Pilot_Edition.zip"
+    ZIP_URL="https://github.com/vihaaninnovations/autonoma-ai.github.io/releases/latest/download/Autonoma_Pilot_Edition.zip"
     ZIP_PATH="Autonoma_Pilot_Edition.zip"
     
     if command -v curl &> /dev/null; then
