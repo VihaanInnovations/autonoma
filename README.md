@@ -1,64 +1,52 @@
-# Autonoma Enterprise L5 (v1.0.0)
+# Autonoma (L5 Local Agent)
 
-> **"The World's First 100% Reliable Autonomous Security Engineer"**
+**A local-first coding agent that actually fixes bugs without breaking the build.**
 
-[![License](https://img.shields.io/badge/License-Enterprise-blue.svg)](LICENSE)
-[![Autonomy Level](https://img.shields.io/badge/Autonomy-L5_Verified-green.svg)](docs/L5_VERIFICATION.md)
-[![Success Rate](https://img.shields.io/badge/Fix_Rate-100%25-brightgreen.svg)](validation_output_final.txt)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Local](https://img.shields.io/badge/Model-Qwen_2.5-purple.svg)]()
 
 ![Autonoma Demo](docs/media/demo.gif)
 
 ---
 
-## 🚀 The L5 Promise: 100 Runs. 100 Fixes.
-Autonoma isn't just a linter. It is a **Cybernetic Reliability Engine** designed to replace manual remediation of standardized vulnerabilities.
+## What is this?
+I got tired of Copilot hallucinating imports and breaking my code.
+Autonoma is a background daemon that acts as a reliable "L5" engineer.
 
-Unlike "Copilots" that hallucinate, Autonoma's **Synthetic Cortex** guarantees:
-- **0% Hallucinations**: Uses deterministic AST manipulation for critical fixes.
-- **100% Validation**: Every fix is compiled, linted, and verified before commit.
-- **Crash-Proof**: "Chaos Monkey" tested architecture that survives malformed inputs.
+It doesn't just autocomplete. It:
+1.  **Watches file changes**.
+2.  **Reasoning**: Parsed AST (Tree-sitter) > Context Window.
+3.  **Inference**: Uses a fine-tuned Qwen 2.5-Coder (Local).
+4.  **Validation**: Actually runs the linter/compiler on the fix. If it fails, it retries.
 
-## 💼 Why Enterprise?
-
-| Feature | Community | Enterprise Edition |
-| :--- | :--- | :--- |
-| **Fix Engine** | L3 (Suggestions) | **L5 (Autonomous Commits)** |
-| **Reliability** | 80% (LLM Dependent) | **100% (Synthetic Cortex + ML)** |
-| **Deployment** | Local CLI | **Docker / Air-Gapped / CI/CD** |
-| **Reporting** | Console Log | **PDF / SARIF / ISO 27001 Evidence** |
-| **Isolation** | Process-based | **Docker Sandbox (Secure Context)** |
-
-## 🛠️ Validation & Stress Testing
-We don't guess. We prove.
-
-### Reliability Proof ("Chaos Monkey")
-We subjected the engine to the **100-Cycle Stress Loop**:
-- **Scenario**: 500+ Malformed SQL Files + Hardcoded Secrets.
-- **Result**: **100% Success Rate**. No crashes. No partial fixes.
-- **Architecture**: If the LLM times out, the `Synthetic Cortex` takes over instantly options with `< 50ms` latency.
-
-### Docker Sandboxing
-Your code never leaves your perimeter.
-- **Network Isolated**: No outbound calls to OpenAI/Claude (unless configured).
-- **Volume Mounted**: Read/Write access strictly limited to the target repo.
-
-## 📦 Immediate ROI
-Stop paying Senior Engineers $200/hr to fix SQL Injection.
-
-1. **Deploy**:
-   ```bash
-   docker-compose up -d
-   ```
-2. **Analyze**:
-   ```bash
-   docker exec -it autonoma-core autonoma analyze /app/target --auto-fix
-   ```
-3. **Report**:
-   Download the `compliance_report.pdf` and send it to your auditor.
+**Zero Hallucinations** (in theory). If it generates bad code, the validator catches it before you ever see it.
 
 ---
 
-### [Get the Enterprise Edition](https://autonoma.dev/enterprise)
-*Includes: Docker Images, SLA Support, Custom Rule Engine.*
+## Why use this over Devin/Cursor?
+*   **It's Free & Local**: No $20/month sub. Runs on your GPU/CPU.
+*   **Air-Gapped**: Your code doesn't go to OpenAI.
+*   **Tree-Sitter Integration**: It understands code structure, not just text.
 
-*(c) 2026 Autonoma Security Inc.*
+---
+
+## Installation
+
+**Windows**: `install.ps1`
+**Linux/Mac**: `install.sh`
+
+Or check `USER_MANUAL.md` for manual python/node setup.
+
+---
+
+## Tech Stack
+*   **Core**: Python 3.10
+*   **Parsing**: Tree-sitter
+*   **LLM**: Qwen 2.5-Coder (Quantized)
+*   **Architecture**: Dockerized Daemon + VS Code Client
+
+---
+
+## License
+MIT. Built by one guy, for the community.
+Report bugs on GitHub issues.

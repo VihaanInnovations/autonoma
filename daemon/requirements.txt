@@ -1,0 +1,23 @@
+fastapi
+uvicorn
+pydantic
+httpx
+slowapi
+chromadb
+tree-sitter
+tree-sitter-javascript
+tree-sitter-python
+tree-sitter-java
+tree-sitter-go
+tree-sitter-rust
+tree-sitter-cpp
+click
+tenacity
+cryptography
+itsdangerous
+authlib
+# PDF generation for compliance reports
+weasyprint>=60.0
+# Cron expression parsing for scheduled reports
+croniter>=2.0.0
+# sqlite3 is part of the standard library
