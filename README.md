@@ -1,164 +1,60 @@
-# Autonoma – Pilot Edition
+# Autonoma (L5 Local Agent)
 
-## Overview
+**A local-first coding agent that actually fixes bugs without breaking the build.**
 
-Autonoma (Pilot Edition) is an **open‑source, local‑first autonomous code remediation engine** designed to automatically detect and fix a defined class of high‑impact code issues using static analysis and LLM‑assisted reasoning.
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Local](https://img.shields.io/badge/Model-Qwen_2.5-purple.svg)]()
 
-This repository exposes **only the core autonomy engine**. It is intentionally scoped for **individual developers, security researchers, and early adopters** who want to experiment with fully automated code fixes in a controlled, single‑repository environment.
-
-Autonoma runs **entirely on‑premise**, requires no external SaaS dependency, and is designed to be transparent, inspectable, and hackable.
-
----
-
-## What “L5 Autonomy” Means in This Repo
-
-In the context of Autonoma Pilot Edition, **L5 autonomy** means:
-
-* No human‑in‑the‑loop during execution
-* Fully automated detection → reasoning → fix → apply loop
-* Deterministic remediation for a *bounded* set of issues
-* Local execution with explicit scope
-
-It **does not** mean unlimited self‑modifying behavior, unrestricted system control, or organizational‑level autonomy.
+![Autonoma Demo](docs/media/demo.gif)
 
 ---
 
-## Issues Autonoma Can Fix Automatically
+## What is this?
+I got tired of Copilot hallucinating imports and breaking my code.
+Autonoma is a background daemon that acts as a reliable "L5" engineer.
 
-The Pilot Edition focuses on **five high‑impact, well‑defined categories** where deterministic remediation is possible:
+It doesn't just autocomplete. It:
+1.  **Watches file changes**.
+2.  **Reasoning**: Parsed AST (Tree-sitter) > Context Window.
+3.  **Inference**: Uses a fine-tuned Qwen 2.5-Coder (Local).
+4.  **Validation**: Actually runs the linter/compiler on the fix. If it fails, it retries.
 
-* Hardcoded API keys and secrets
-* Insecure password handling patterns
-* Common SQL injection vulnerabilities
-* Linting and structural code issues
-* Rule‑based security anti‑patterns
-
-All fixes are generated through **AST‑level analysis** combined with a local LLM (default: Qwen 2.5‑Coder) to ensure structure‑aware and minimally invasive changes.
-
----
-
-## How It Works (High Level)
-
-1. **Static Analysis**
-
-   * Source code is parsed using AST‑level inspection
-   * Known insecure patterns are detected deterministically
-
-2. **Autonomous Reasoning**
-
-   * A local LLM is used to reason about safe, minimal fixes
-   * Output is constrained to structured, schema‑validated responses
-
-3. **Controlled Application**
-
-   * Fixes are applied directly to the codebase
-   * Scope is limited to the current repository
-
-4. **Repeatable Execution**
-
-   * The system can be re‑run safely
-   * Behavior is predictable within defined boundaries
+**Zero Hallucinations** (in theory). If it generates bad code, the validator catches it before you ever see it.
 
 ---
 
-## Local‑First by Design
-
-Autonoma Pilot Edition:
-
-* Runs entirely on your machine
-* Does not send code to external services
-* Does not require cloud credentials
-* Can operate in air‑gapped environments
-
-This makes it suitable for experimentation on sensitive codebases — **with the understanding that no enterprise governance guarantees are provided**.
+## Why use this over Devin/Cursor?
+*   **Hybrid Architecture**: Runs Offline (No Cost) OR Online (Smartest). Your choice.
+*   **Air-Gapped Ready**: Can work without any internet connection.
+*   **Generic Repair**: Fixes Secrets, SQLi, XSS, and more across ANY repository.
+*   **Project Audit**: Scans 1000+ files recursively with one click.
 
 ---
 
-## What This Edition Is NOT
+## Quick Start
 
-This repository **does not include** enterprise or production‑grade organizational features.
+### 1. Install
+*   **Windows**: Run `./install.ps1`
+*   **Mac/Linux**: Run `./install.sh`
 
-Specifically, it does **not** provide:
+### 2. Start (The Daemon)
+*   Run `./run_pilot.ps1`
+    *(This automatically creates the environment, installs dependencies, and launches the AI Engine)*
 
-* Governance or policy enforcement
-* Role‑based access control (RBAC)
-* Approval workflows
-* Audit logs or compliance reporting
-* Multi‑repository or multi‑team orchestration
-* SLAs, support guarantees, or security attestations
-
-If you need any of the above, this edition is **not sufficient** on its own.
-
----
-
-## Intended Use Cases
-
-Autonoma Pilot Edition is suitable for:
-
-* Individual developers
-* Open‑source contributors
-* Security research and experimentation
-* Proof‑of‑concept automation
-* Evaluating autonomous remediation approaches
-
-It is **not designed** for regulated, compliance‑bound, or production‑critical enterprise deployments.
+### 3. Code
+*   Open VS Code. 
+*   Autonoma will automatically connect.
 
 ---
 
-## Installation
-
-> ⚠️ This is a pilot project. Expect rough edges.
-
-Installation scripts are provided for convenience:
-
-* `install.sh` (Linux / macOS)
-* `install.ps1` (Windows)
-
-These scripts install Autonoma locally and configure the required runtime dependencies.
-
-Always review installation scripts before execution.
+## Tech Stack
+*   **Core**: Python 3.10
+*   **Parsing**: Tree-sitter / Native AST
+*   **Brains**: Qwen 2.5 (Local) + GPT-4/Claude (Optional Online)
+*   **Architecture**: Dockerized Daemon + VS Code Client
 
 ---
 
 ## License
-
-This project is released under the **MIT License**.
-
-You are free to use, modify, and distribute this code, including for commercial purposes, **at your own risk**.
-
----
-
-## Roadmap (High Level)
-
-Future work may include:
-
-* Improved static analysis coverage
-* Expanded vulnerability classes
-* Safer execution boundaries
-* Optional enterprise‑grade governance layers (separate edition)
-
-No timeline or guarantees are provided.
-
----
-
-## Disclaimer
-
-Autonoma Pilot Edition performs **automated code modification**.
-
-* Always review changes before merging
-* Do not run against critical production branches
-* No warranties are provided
-
-Use responsibly.
-
----
-
-## Feedback & Contributions
-
-This is an early‑stage project.
-
-Constructive feedback, issue reports, and pull requests are welcome — especially those focused on correctness, safety, and determinism.
-
----
-
-**Autonoma Pilot Edition** is about exploring what *practical, bounded autonomy* looks like — not promising enterprise guarantees before they exist.
+MIT. Built by one guy, for the community.
+Report bugs on GitHub issues.
