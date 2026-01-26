@@ -1,0 +1,6 @@
+rules:
+  - id: "CUST001"
+    pattern: "eval\\("
+    message: "Security Policy Violation: strict no-eval policy."
+    severity: "CRITICAL"
+    include: ["*.py"]
