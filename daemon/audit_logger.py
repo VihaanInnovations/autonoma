@@ -1,7 +1,7 @@
 from typing import Optional
 import json
 from .db.db import log_audit_event
-from daemon.logging.structured_logger import StructuredLogger
+from daemon.audit_logging.structured_logger import StructuredLogger
 
 class AuditLogger:
     def __init__(self, project_id: str, user_id: str = "local_user"):

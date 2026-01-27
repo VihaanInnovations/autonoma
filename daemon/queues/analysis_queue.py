@@ -14,7 +14,7 @@ from ..analysis.symbolic_engine import SymbolicEngine
 from ..analysis.config_manager import ConfigManager
 from ..analysis.llm_router import LLMRouter
 from ..analysis.merge_utils import make_issue_key
-from ..logging.flight_recorder import FlightRecorder
+from ..audit_logging.flight_recorder import FlightRecorder
 from pathlib import Path
 
 logger = logging.getLogger("hybrid-reviewer")

@@ -21,3 +21,4 @@ weasyprint>=60.0
 # Cron expression parsing for scheduled reports
 croniter>=2.0.0
 # sqlite3 is part of the standard library
+email-validator
