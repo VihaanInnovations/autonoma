@@ -4,6 +4,7 @@ Startup script for Hybrid Local AI Code Reviewer Daemon
 """
 import sys
 import os
+import logging
 from pathlib import Path
 
 # Add current directory to path
