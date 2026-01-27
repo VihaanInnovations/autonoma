@@ -1,8 +1,8 @@
 {
     "name": "autonoma-ai-engine",
-    "displayName": "Autonoma AI - L5 Autonomous Code Engineer",
-    "description": "Local-first L5 Autonomous Code Engineer. Fixes bugs while you sleep. Air-gapped & Secure.",
-    "version": "1.0.0",
+    "displayName": "Autonoma AI - Local Autonomous Code Fixing Agent",
+    "description": "Local autonomous code fixing agent. Fixes bugs while you sleep. Air-gapped & Secure.",
+    "version": "1.0.4",
     "publisher": "autonoma-team",
     "icon": "icon.png",
     "license": "SEE LICENSE IN LICENSE.txt",
@@ -32,7 +32,8 @@
         "onLanguage:javascript",
         "onLanguage:typescript",
         "onLanguage:go",
-        "onLanguage:rust"
+        "onLanguage:rust",
+        "onStartupFinished"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -133,7 +134,7 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
+        "compile": "npx tsc -p ./",
         "watch": "tsc -watch -p ./",
         "package": "vsce package"
     },

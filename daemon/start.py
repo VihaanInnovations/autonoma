@@ -7,8 +7,9 @@ import os
 import logging
 from pathlib import Path
 
-# Add current directory to path
+# Add current directory and parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from server import app
 import uvicorn
