@@ -11,34 +11,34 @@ echo "Checking prerequisites..."
 # Check Python
 if command -v python3 &> /dev/null; then
     PYTHON_VERSION=$(python3 --version 2>&1)
-    echo "✓ Python found: $PYTHON_VERSION"
+    echo "[OK] Python found: $PYTHON_VERSION"
     PYTHON_CMD=python3
 elif command -v python &> /dev/null; then
     PYTHON_VERSION=$(python --version 2>&1)
-    echo "✓ Python found: $PYTHON_VERSION"
+    echo "[OK] Python found: $PYTHON_VERSION"
     PYTHON_CMD=python
 else
-    echo "✗ Python not found. Please install Python 3.10+ from python.org"
+    echo "[ERROR] Python not found. Please install Python 3.10+ from python.org"
     exit 1
 fi
 
 # Check Node.js
 if command -v node &> /dev/null; then
     NODE_VERSION=$(node --version 2>&1)
-    echo "✓ Node.js found: $NODE_VERSION"
+    echo "[OK] Node.js found: $NODE_VERSION"
 else
-    echo "✗ Node.js not found. Please install Node.js 18+ from nodejs.org"
+    echo "[ERROR] Node.js not found. Please install Node.js 18+ from nodejs.org"
     exit 1
 fi
 
 # Check VS Code
 if command -v code &> /dev/null; then
     CODE_VERSION=$(code --version 2>&1 | head -n 1)
-    echo "✓ VS Code found: $CODE_VERSION"
+    echo "[OK] VS Code found: $CODE_VERSION"
     VSCODE_AVAILABLE=true
 else
-    echo "⚠ VS Code CLI not found. Extension will be packaged but not auto-installed."
-    echo "  You can install it manually: code --install-extension autonoma-ai-reviewer-1.0.0.vsix"
+    echo "[WARN] VS Code CLI not found. Extension will be packaged but not auto-installed."
+    echo "  You can install it manually: code --install-extension autonoma-ai-engine-1.0.0.vsix"
     VSCODE_AVAILABLE=false
 fi
 
@@ -47,8 +47,8 @@ echo ""
 
 # Bootstrap: Check if running standalone (no daemon folder)
 if [ ! -d "daemon" ]; then
-    echo "⚠ Core components not found locally."
-    echo "⬇ Downloading Autonoma Pilot Edition (Latest)..."
+    echo "[WARN] Core components not found locally."
+    echo "[INFO] Downloading Autonoma Pilot Edition (Latest)..."
     
     ZIP_URL="https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Pilot_Edition.zip"
     ZIP_PATH="Autonoma_Pilot_Edition.zip"
@@ -58,13 +58,13 @@ if [ ! -d "daemon" ]; then
     elif command -v wget &> /dev/null; then
         wget -O "$ZIP_PATH" "$ZIP_URL"
     else
-        echo "✗ Neither curl nor wget found. Please download $ZIP_URL manually."
+        echo "[ERROR] Neither curl nor wget found. Please download $ZIP_URL manually."
         exit 1
     fi
 
     if [ $? -eq 0 ]; then
-        echo "✓ Download complete."
-        echo "📦 Extracting..."
+        echo "[OK] Download complete."
+        echo "[INFO] Extracting..."
         unzip -o "$ZIP_PATH"
         rm "$ZIP_PATH"
         
@@ -74,7 +74,7 @@ if [ ! -d "daemon" ]; then
             rm -rf Autonoma_Pilot_Edition
         fi
     else
-        echo "✗ Failed to download installer content."
+        echo "[ERROR] Failed to download installer content."
         exit 1
     fi
 fi
@@ -98,11 +98,11 @@ echo "Installing Python packages..."
 pip install -r requirements.txt
 
 if [ $? -ne 0 ]; then
-    echo "✗ Failed to install Python dependencies"
+    echo "[ERROR] Failed to install Python dependencies"
     exit 1
 fi
 
-echo "✓ Python dependencies installed"
+echo "[OK] Python dependencies installed"
 echo ""
 
 # Step 2: Initialize database
@@ -110,11 +110,11 @@ echo "Step 2: Initializing database..."
 $PYTHON_CMD -c "from db.db import init_db; init_db()"
 
 if [ $? -ne 0 ]; then
-    echo "✗ Failed to initialize database"
+    echo "[ERROR] Failed to initialize database"
     exit 1
 fi
 
-echo "✓ Database initialized"
+echo "[OK] Database initialized"
 echo ""
 
 # Step 3: Install VS Code extension
@@ -126,7 +126,7 @@ echo "Installing Node.js dependencies..."
 npm install
 
 if [ $? -ne 0 ]; then
-    echo "✗ Failed to install Node.js dependencies"
+    echo "[ERROR] Failed to install Node.js dependencies"
     exit 1
 fi
 
@@ -142,7 +142,7 @@ echo "Compiling extension..."
 npm run compile
 
 if [ $? -ne 0 ]; then
-    echo "✗ Failed to compile extension"
+    echo "[ERROR] Failed to compile extension"
     exit 1
 fi
 
@@ -151,27 +151,36 @@ echo "Packaging extension..."
 npm run package
 
 if [ $? -ne 0 ]; then
-    echo "✗ Failed to package extension"
+    echo "[ERROR] Failed to package extension"
     exit 1
 fi
 
-echo "✓ Extension packaged successfully"
+echo "[OK] Extension packaged successfully"
 
 # Install extension if VS Code CLI is available
 if [ "$VSCODE_AVAILABLE" = true ]; then
     echo "Installing extension to VS Code..."
-    code --install-extension autonoma-ai-engine-1.0.0.vsix
+    # Find the VSIX file
+    VSIX_FILE=$(ls autonoma-ai-engine-*.vsix | head -n 1)
     
-    if [ $? -eq 0 ]; then
-        echo "✓ Extension installed successfully"
-        echo "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')"
+    if [ -n "$VSIX_FILE" ]; then
+        code --install-extension "$VSIX_FILE"
+        
+        if [ $? -eq 0 ]; then
+            echo "[OK] Extension installed successfully"
+            echo "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')"
+        else
+            echo "[WARN] Extension packaged but not installed. Install manually:"
+            echo "  code --install-extension $VSIX_FILE"
+        fi
     else
-        echo "⚠ Extension packaged but not installed. Install manually:"
-        echo "  code --install-extension autonoma-ai-engine-1.0.0.vsix"
+        echo "[ERROR] VSIX file not found after packaging."
+        exit 1
     fi
+    
 else
-    echo "⚠ VS Code CLI not found. Extension packaged but not installed."
-    echo "  Install manually: code --install-extension autonoma-ai-engine-1.0.0.vsix"
+    echo "[WARN] VS Code CLI not found. Extension packaged but not installed."
+    echo "  Install manually: code --install-extension autonoma-ai-engine-*.vsix"
 fi
 
 echo ""

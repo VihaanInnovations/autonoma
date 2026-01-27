@@ -8,29 +8,46 @@ Write-Host ""
 Write-Host "Checking prerequisites..." -ForegroundColor Yellow
 
 # Check Python
+# Check Python
 try {
+    # Try 'python' first
     $pythonVersion = python --version 2>&1
-    Write-Host "✓ Python found: $pythonVersion" -ForegroundColor Green
+    Write-Host "[OK] Python found: $pythonVersion" -ForegroundColor Green
+    $pythonCmd = "python"
 } catch {
-    Write-Host "✗ Python not found. Please install Python 3.10+ from python.org" -ForegroundColor Red
-    exit 1
+    # Try 'py' (Windows Launcher)
+    try {
+        $pythonVersion = py --version 2>&1
+        Write-Host "[OK] Python found (via py): $pythonVersion" -ForegroundColor Green
+        $pythonCmd = "py"
+    } catch {
+        # Try 'python3'
+        try {
+            $pythonVersion = python3 --version 2>&1
+            Write-Host "[OK] Python found (via python3): $pythonVersion" -ForegroundColor Green
+            $pythonCmd = "python3"
+        } catch {
+             Write-Host "[ERROR] Python not found. Please install Python 3.10+ from python.org" -ForegroundColor Red
+             exit 1
+        }
+    }
 }
 
 # Check Node.js
 try {
     $nodeVersion = node --version 2>&1
-    Write-Host "✓ Node.js found: $nodeVersion" -ForegroundColor Green
+    Write-Host "[OK] Node.js found: $nodeVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Node.js not found. Please install Node.js 18+ from nodejs.org" -ForegroundColor Red
+    Write-Host "[ERROR] Node.js not found. Please install Node.js 18+ from nodejs.org" -ForegroundColor Red
     exit 1
 }
 
 # Check VS Code
 try {
     $codeVersion = code --version 2>&1 | Select-Object -First 1
-    Write-Host "✓ VS Code found: $codeVersion" -ForegroundColor Green
+    Write-Host "[OK] VS Code found: $codeVersion" -ForegroundColor Green
 } catch {
-    Write-Host "⚠ VS Code CLI not found. Extension will be packaged but not auto-installed." -ForegroundColor Yellow
+    Write-Host "[WARN] VS Code CLI not found. Extension will be packaged but not auto-installed." -ForegroundColor Yellow
     Write-Host "  You can install it manually: code --install-extension autonoma-ai-engine-1.0.0.vsix" -ForegroundColor Yellow
 }
 
@@ -38,17 +55,17 @@ Write-Host ""
 
 # Bootstrap: Check if running standalone (no daemon folder)
 if (-not (Test-Path "daemon")) {
-    Write-Host "⚠ Core components not found locally." -ForegroundColor Yellow
-    Write-Host "⬇ Downloading Autonoma Pilot Edition (Latest)..." -ForegroundColor Cyan
+    Write-Host "[WARN] Core components not found locally." -ForegroundColor Yellow
+    Write-Host "[INFO] Downloading Autonoma Pilot Edition (Latest)..." -ForegroundColor Cyan
     
     $zipUrl = "https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Pilot_Edition.zip"
     $zipPath = "Autonoma_Pilot_Edition.zip"
     
     try {
         Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath
-        Write-Host "✓ Download complete." -ForegroundColor Green
+        Write-Host "[OK] Download complete." -ForegroundColor Green
         
-        Write-Host "📦 Extracting..." -ForegroundColor Cyan
+        Write-Host "[INFO] Extracting..." -ForegroundColor Cyan
         Expand-Archive -Path $zipPath -DestinationPath . -Force
         Remove-Item $zipPath
         
@@ -59,7 +76,7 @@ if (-not (Test-Path "daemon")) {
         }
         
     } catch {
-        Write-Host "✗ Failed to download/extract installer content." -ForegroundColor Red
+        Write-Host "[ERROR] Failed to download/extract installer content." -ForegroundColor Red
         Write-Host "  Error: $_" -ForegroundColor Red
         Write-Host "  Please download the Zip manually from GitHub Releases." -ForegroundColor Yellow
         exit 1
@@ -73,7 +90,7 @@ cd daemon
 # Create virtual environment if it doesn't exist
 if (-not (Test-Path "venv")) {
     Write-Host "Creating virtual environment..." -ForegroundColor Cyan
-    python -m venv venv
+    & $pythonCmd -m venv venv
 }
 
 # Activate virtual environment
@@ -81,7 +98,7 @@ Write-Host "Activating virtual environment..." -ForegroundColor Cyan
 if (Test-Path ".\venv\Scripts\Activate.ps1") {
     & ".\venv\Scripts\Activate.ps1"
 } else {
-    Write-Host "⚠ Activation script not found, relying on global Python or manual activation." -ForegroundColor Yellow
+    Write-Host "[WARN] Activation script not found, relying on global Python or manual activation." -ForegroundColor Yellow
 }
 
 # Install dependencies
@@ -94,11 +111,11 @@ if (Test-Path ".\venv\Scripts\python.exe") {
 }
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Failed to install Python dependencies" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to install Python dependencies" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ Python dependencies installed" -ForegroundColor Green
+Write-Host "[OK] Python dependencies installed" -ForegroundColor Green
 Write-Host ""
 
 # Step 2: Initialize database
@@ -106,15 +123,15 @@ Write-Host "Step 2: Initializing database..." -ForegroundColor Yellow
 if (Test-Path ".\venv\Scripts\python.exe") {
     & ".\venv\Scripts\python.exe" -c "from db.db import init_db; init_db()"
 } else {
-    python -c "from db.db import init_db; init_db()"
+    & $pythonCmd -c "from db.db import init_db; init_db()"
 }
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Failed to initialize database" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to initialize database" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ Database initialized" -ForegroundColor Green
+Write-Host "[OK] Database initialized" -ForegroundColor Green
 Write-Host ""
 
 # Step 3: Install VS Code extension
@@ -126,7 +143,7 @@ Write-Host "Installing Node.js dependencies..." -ForegroundColor Cyan
 npm install
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Failed to install Node.js dependencies" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to install Node.js dependencies" -ForegroundColor Red
     exit 1
 }
 
@@ -143,7 +160,7 @@ Write-Host "Compiling extension..." -ForegroundColor Cyan
 npm run compile
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Failed to compile extension" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to compile extension" -ForegroundColor Red
     exit 1
 }
 
@@ -152,27 +169,34 @@ Write-Host "Packaging extension..." -ForegroundColor Cyan
 npm run package
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Failed to package extension" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to package extension" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ Extension packaged successfully" -ForegroundColor Green
+Write-Host "[OK] Extension packaged successfully" -ForegroundColor Green
 
 # Install extension if VS Code CLI is available
 if (Get-Command code -ErrorAction SilentlyContinue) {
     Write-Host "Installing extension to VS Code..." -ForegroundColor Cyan
-    code --install-extension autonoma-ai-engine-1.0.0.vsix
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Extension installed successfully" -ForegroundColor Green
-        Write-Host "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')" -ForegroundColor Cyan
+    # Find the generated VSIX file
+    $vsixFile = Get-ChildItem -Filter "autonoma-ai-engine-*.vsix" | Select-Object -First 1
+    if ($vsixFile) {
+        code --install-extension $vsixFile.Name
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[OK] Extension installed successfully" -ForegroundColor Green
+            Write-Host "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')" -ForegroundColor Cyan
+        } else {
+            Write-Host "[WARN] Extension packaged but not installed. Install manually:" -ForegroundColor Yellow
+            Write-Host "  code --install-extension $($vsixFile.Name)" -ForegroundColor Yellow
+        }
     } else {
-        Write-Host "⚠ Extension packaged but not installed. Install manually:" -ForegroundColor Yellow
-        Write-Host "  code --install-extension autonoma-ai-engine-1.0.0.vsix" -ForegroundColor Yellow
+        Write-Host "[ERROR] VSIX file not found after packaging." -ForegroundColor Red
+        exit 1
     }
 } else {
-    Write-Host "⚠ VS Code CLI not found. Extension packaged but not installed." -ForegroundColor Yellow
-    Write-Host "  Install manually: code --install-extension autonoma-ai-engine-1.0.0.vsix" -ForegroundColor Yellow
+    Write-Host "[WARN] VS Code CLI not found. Extension packaged but not installed." -ForegroundColor Yellow
+    Write-Host "  Install manually: code --install-extension autonoma-ai-engine-*.vsix" -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -197,5 +221,5 @@ Write-Host "   - Search for 'Hybrid Reviewer'" -ForegroundColor Gray
 Write-Host "   - You should see all commands available" -ForegroundColor Gray
 Write-Host ""
 Write-Host "4. Check daemon health:" -ForegroundColor White
-Write-Host "   Open browser: http://127.0.0.1:8000/health" -ForegroundColor Gray
+Write-Host '   Open browser: http://127.0.0.1:8000/health' -ForegroundColor Gray
 Write-Host ""
