@@ -1,156 +1,119 @@
 # Autonoma
 
-> **"Refusal is a valid outcome."**
+> "Refusal is a valid outcome."
 
-The code security scanner that knows when **not** to fix.
-
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Local-First](https://img.shields.io/badge/Privacy-100%25_Local-green.svg)]()
-[![Model](https://img.shields.io/badge/LLM-Qwen_2.5-purple.svg)]()
+A local-first code security tool that knows when *not* to fix.
 
 ---
 
-## ⚡ See It In Action
+## What it does
+
+Autonoma scans your code for hardcoded secrets and fixes them automatically — but only when it's safe to do so.
 
 ```diff
-# Before: credentials.py
+# Before
 - password = "supersecret123"
 - api_key = "sk-live-abc123xyz"
 
-# After: Autonoma auto-fix
+# After auto-fix
 + password = os.getenv("DB_PASSWORD")
 + api_key = os.getenv("API_KEY")
 ```
 
-**30 seconds to try:**
-```bash
-git clone https://github.com/user/autonoma-community.git
-cd autonoma-community
-./install.sh  # or install.ps1 on Windows
-python -m daemon.cli analyze ./demo-project --auto-fix --verbose
-```
+If Autonoma can't find the corresponding environment variable pattern, it refuses to fix. Broken fixes are worse than no fix at all.
 
 ---
 
-## 🧠 What Makes Autonoma Different
+## How results work
 
-Most security tools blast you with warnings. Autonoma takes a different approach:
+| Outcome | What it means |
+|---------|---------------|
+| SUCCESS | Fix applied |
+| REFUSED | Declined on purpose — fix would break something |
+| FAILED | Bug in Autonoma (report it) |
 
-| Outcome | Meaning |
-|---------|---------|
-| ✅ **SUCCESS** | Fix applied correctly |
-| 🚫 **REFUSED** | Deliberately declined — would cause harm |
-| ❌ **FAILED** | Unexpected error (a bug) |
-
-**Refusal is not failure.** When Autonoma detects a hardcoded secret but can't find the environment variable contract, it refuses to fix — because a broken fix is worse than no fix.
-
-This is **intentional restraint**.
+Refusal isn't failure. It's the system working as intended.
 
 ---
 
-## 🔒 What It Fixes (Community Edition)
+## What it can fix (Community Edition)
 
-| Issue | Description | Auto-Fix |
-|-------|-------------|----------|
-| **SEC001** | Hardcoded passwords | ✅ `os.getenv("PASSWORD")` |
-| **SEC002** | Hardcoded API keys | ✅ `os.getenv("API_KEY")` |
+- **SEC001** — Hardcoded passwords → `os.getenv("PASSWORD")`
+- **SEC002** — Hardcoded API keys → `os.getenv("API_KEY")`
 
-Zero cloud. Zero telemetry. **100% local.**
+Everything runs locally. No cloud, no telemetry.
 
 ---
 
-## 🏗️ How It Works
+## Quick start
 
-```
-Source Code → AST Parser → Secret Detection → Safety Check → Auto-Fix
-                                                    ↓
-                              (If unsafe → REFUSED with explanation)
-```
-
-1. **Parse** — Analyzes code at the AST level (not regex)
-2. **Detect** — Finds hardcoded secrets deterministically
-3. **Validate** — Checks if fix would break the code
-4. **Fix or Refuse** — Applies fix only if safe; refuses with clear reason if not
-
----
-
-## 🔐 Local-First, Always
-
-- ✅ Runs entirely on your machine
-- ✅ No code leaves your environment
-- ✅ No cloud credentials required
-- ✅ Works air-gapped
-
----
-
-## 📦 Quick Start
-
-### Windows
+**Windows:**
 ```powershell
 ./install.ps1
 ./run.ps1
 ```
 
-### Mac / Linux
+**Mac/Linux:**
 ```bash
 ./install.sh
 python -m daemon.start
 ```
 
-### VS Code
-Open VS Code — Autonoma connects automatically.
-
-### CLI
+**CLI usage:**
 ```bash
 python -m daemon.cli analyze ./your-repo --auto-fix --verbose
 ```
 
----
-
-## 🚀 Enterprise Edition
-
-The Community Edition proves the philosophy. The **Enterprise Edition** extends it:
-
-| Feature | Community | Enterprise |
-|---------|-----------|------------|
-| SEC001/SEC002 (Secrets) | ✅ | ✅ |
-| SEC003 (SQL Injection) | — | ✅ |
-| SEC004 (XSS/SSTI) | — | ✅ |
-| SEC005 (Insecure Deserialization) | — | ✅ |
-| Audit Logs | — | ✅ |
-| Policy Enforcement | — | ✅ |
-| RBAC & Team Management | — | ✅ |
-| CI/CD Integration | — | ✅ |
-
-**[Contact for Enterprise Licensing →](mailto:enterprise@autonoma.dev)**
+Open VS Code and Autonoma connects automatically.
 
 ---
 
-## 🛠️ Tech Stack
+## How it works
 
-- **Core:** Python 3.10+
-- **Parsing:** Native AST analysis
-- **LLM:** Qwen 2.5-Coder (local)
-- **Architecture:** Daemon + VS Code Extension
-
----
-
-## 📖 Philosophy
-
-> "A tool that fixes everything understands nothing."
-
-Autonoma was built on a simple belief: **autonomous systems must know their limits.** The refusal to act — when action would cause harm — is a feature, not a limitation.
-
-We don't just catch secrets. We catch ourselves before we break your code.
+1. Parses code at the AST level (not regex)
+2. Detects hardcoded secrets
+3. Checks if the fix would break anything
+4. Applies fix only if safe; refuses with reason if not
 
 ---
 
-## 📄 License
+## Local-first
 
-MIT. Free forever. Built for the community.
+- Runs on your machine
+- No code sent anywhere
+- No cloud credentials needed
+- Works air-gapped
 
 ---
 
-<p align="center">
-  <strong>Autonoma: Code Security with Intentional Restraint</strong>
-</p>
+## Enterprise Edition
+
+Community Edition covers SEC001/SEC002. Enterprise adds:
+
+- SQL injection detection (SEC003)
+- XSS/SSTI detection (SEC004)
+- Insecure deserialization (SEC005)
+- Audit logs, RBAC, CI/CD integration
+
+Contact: enterprise@autonoma.dev
+
+---
+
+## Tech
+
+- Python 3.10+
+- Native AST parsing
+- Qwen 2.5-Coder (local LLM)
+- Daemon + VS Code extension
+
+---
+
+## Philosophy
+
+A tool that fixes everything understands nothing. Autonoma knows its limits. The refusal to act — when action would cause harm — is the feature.
+
+---
+
+## License
+
+MIT
