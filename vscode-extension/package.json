@@ -5,7 +5,7 @@
     "version": "1.0.4",
     "publisher": "autonoma-team",
     "icon": "icon.png",
-    "license": "SEE LICENSE IN LICENSE.txt",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/vihaaninnovations/autonoma"
@@ -23,75 +23,44 @@
         "lint",
         "security",
         "privacy",
-        "local",
-        "l5",
-        "autonomous"
+        "local"
     ],
     "activationEvents": [
         "onLanguage:python",
         "onLanguage:javascript",
         "onLanguage:typescript",
-        "onLanguage:go",
-        "onLanguage:rust",
         "onStartupFinished"
     ],
     "main": "./dist/extension.js",
     "contributes": {
         "commands": [
             {
-                "command": "hybrid-reviewer.analyze",
+                "command": "autonoma.analyze",
                 "title": "Autonoma: Analyze File"
             },
             {
-                "command": "hybrid-reviewer.analyzeProject",
+                "command": "autonoma.analyzeProject",
                 "title": "Autonoma: Analyze Project"
             },
             {
-                "command": "hybrid-reviewer.setApiKey",
-                "title": "Autonoma: Set API Key"
-            },
-            {
-                "command": "hybrid-reviewer.runProjectAnalysis",
+                "command": "autonoma.runProjectAnalysis",
                 "title": "Autonoma: Run Project Analysis"
-            },
-            {
-                "command": "hybrid-reviewer.activateL5",
-                "title": "Autonoma: Activate Autonomous Mode (L5)"
             }
         ],
         "configuration": {
             "title": "Autonoma Configuration",
             "properties": {
-                "hybridReviewer.enableLocalLLM": {
+                "autonoma.enableLocalLLM": {
                     "type": "boolean",
                     "default": false,
                     "description": "Enable local LLM inference."
                 },
-                "hybridReviewer.enableCloudLLM": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enable cloud LLM inference."
-                },
-                "hybridReviewer.cloudProvider": {
-                    "type": "string",
-                    "enum": [
-                        "openai",
-                        "anthropic"
-                    ],
-                    "default": "openai",
-                    "description": "Select the cloud provider to use."
-                },
-                "hybridReviewer.cloudModel": {
-                    "type": "string",
-                    "default": "gpt-4-turbo-preview",
-                    "description": "Model name for Cloud LLM (e.g. gpt-4-turbo, claude-3-opus)."
-                },
-                "hybridReviewer.localModel": {
+                "autonoma.localModel": {
                     "type": "string",
                     "default": "llama3",
                     "description": "Model name for Local LLM (e.g. llama3, mistral)."
                 },
-                "hybridReviewer.disabledRules": {
+                "autonoma.disabledRules": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -99,35 +68,19 @@
                     "default": [],
                     "description": "List of rule IDs to disable (e.g. ['PY001', 'SEC002'])."
                 },
-                "hybridReviewer.modelPreference": {
+                "autonoma.modelPreference": {
                     "type": "string",
                     "enum": [
                         "local",
-                        "cloud",
                         "auto"
                     ],
-                    "default": "auto",
+                    "default": "local",
                     "description": "Preference for LLM backend."
                 },
-                "hybridReviewer.ruleOverrides": {
+                "autonoma.ruleOverrides": {
                     "type": "object",
                     "default": {},
                     "description": "Rule overrides."
-                },
-                "hybridReviewer.apiKeys": {
-                    "type": "object",
-                    "default": {},
-                    "description": "API keys for cloud providers."
-                },
-                "hybridReviewer.teamUrl": {
-                    "type": "string",
-                    "default": "",
-                    "description": "URL of the Autonoma Team Server"
-                },
-                "hybridReviewer.teamToken": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Authentication token for Team Server"
                 }
             }
         }

@@ -87,7 +87,7 @@ const dbPassword = os.getenv('DBPASSWORD');  // SEC001: Hardcoded password
 
 class DataHandler {
     constructor() {
-        this.secret = "my_js_secret";  // SEC002
+        this.secret = os.getenv("SECRET");  // SEC002
     }
 
     /**

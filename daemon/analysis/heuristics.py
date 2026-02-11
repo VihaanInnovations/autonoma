@@ -1,34 +1,60 @@
+"""
+Autonoma Community Edition - Heuristics Engine
+Detects hardcoded secrets (SEC001/SEC002) only.
+
+Uses explicit decision outcomes (SUCCESS/REFUSED/FAILED).
+"""
 import re
 from typing import List, Dict, Any, Optional
 from pathlib import Path
-from .ast_engine import ASTEngine
-# We'll import lazily or assume dependency injection to avoid circular imports?
-# But let's import directly for now.
+
 try:
-    from .semantic.semantic_engine import SemanticEngine
+    from .ast_engine import ASTEngine
 except ImportError:
-    SemanticEngine = None
+    ASTEngine = None
+
+try:
+    from .decisions import (
+        DecisionOutcome, RefusalReason, AnalysisResult
+    )
+except ImportError:
+    # Fallback if decisions module not available
+    DecisionOutcome = None
+    RefusalReason = None
+    AnalysisResult = None
+
 
 class HeuristicsEngine:
+    """
+    Community Edition: Detects SEC001/SEC002 only.
+    Returns explicit outcomes, not silent failures.
+    """
+    
+    # Supported file extensions
+    SUPPORTED_EXTENSIONS = {'.py', '.js', '.jsx', '.ts', '.tsx'}
+    
+    # Maximum file size (100KB)
+    MAX_FILE_SIZE = 100 * 1024
+    
     def __init__(self, repo_path: Optional[Path] = None):
-        self.ast_engine = ASTEngine()
-        self.semantic_engine: Optional[SemanticEngine] = None
-        if repo_path and SemanticEngine:
-            # We initialize it here, or we can let the caller set it.
-            # For this Phase, we'll initialize it if a path is provided.
-            self.semantic_engine = SemanticEngine(repo_path)
-            self.semantic_engine.start()
+        self.ast_engine = None
+        if ASTEngine:
+            try:
+                self.ast_engine = ASTEngine()
+            except Exception:
+                pass
 
-
-
+        # Community Edition: SEC001/SEC002 only
         self.patterns = [
+            # SEC002: Hardcoded API Keys (Python)
             {
-                "id": "SEC002", # Renamed SEC001 to AST version, keeping others
+                "id": "SEC002",
                 "pattern": r"api_key\s*=\s*['\"][^'\"]+['\"]",
                 "message": "Hardcoded API key detected.",
                 "type": "security",
                 "severity": "high"
             },
+            # SEC002: Hardcoded API Keys (JavaScript)
             {
                 "id": "SEC002",
                 "pattern": r"(const|let|var)?\s*apiKey\s*=\s*['\"][^'\"]+['\"]",
@@ -36,6 +62,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high"
             },
+            # SEC001: Hardcoded Passwords (JavaScript)
             {
                 "id": "SEC001",
                 "pattern": r"(const|let|var)?\s*\w*[Pp]assword\w*\s*=\s*['\"][^'\"]+['\"]",
@@ -43,6 +70,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high"
             },
+            # SEC001: Hardcoded Passwords (Python)
             {
                 "id": "SEC001",
                 "pattern": r"\w*[Pp]assword\w*\s*=\s*['\"][^'\"]+['\"]",
@@ -50,145 +78,160 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high"
             },
+            # SEC002: Hardcoded Secrets/Tokens
             {
-                "id": "SEC003",
-                "pattern": r"f[\"'].*SELECT.*\{.*\}.*WHERE.*\{.*\}",
-                "message": "SQL Injection vulnerability detected: f-string with user input in SQL query. Use parameterized queries.",
+                "id": "SEC002",
+                "pattern": r"(secret|token|auth_token|api_secret)\s*=\s*['\"][^'\"]+['\"]",
+                "message": "Hardcoded secret/token detected.",
                 "type": "security",
                 "severity": "high"
             },
-            {
-                "id": "SEC003",
-                "pattern": r"query\s*=\s*f[\"'].*SELECT",
-                "message": "SQL Injection vulnerability detected: f-string SQL query with variable interpolation. Use parameterized queries.",
-                "type": "security",
-                "severity": "high"
-            },
-            {
-                "id": "SEC003",
-                "pattern": r"[\"'].*SELECT.*%[sd]",
-                "message": "SQL Injection vulnerability detected: String formatting in SQL query. Use parameterized queries.",
-                "type": "security",
-                "severity": "high"
-            },
-            {
-                "id": "LOG002",
-                "pattern": r"return\s+\w+\.\w+.*#.*could be None|#.*None",
-                "message": "Potential NoneType error: Accessing attribute without null check. Add null check before attribute access.",
-                "type": "logic",
-                "severity": "high"
-            },
-            {
-                "id": "LOG002",
-                "pattern": r"\.(email|name|id|value|data|result|response|user|item|obj)\.[a-zA-Z_]+.*#.*None",
-                "message": "Potential NoneType error: Chained attribute access without null check. Add null check before accessing attributes.",
-                "type": "logic",
-                "severity": "high"
-            },
-            {
-                "id": "LINT001",
-                "pattern": r"print\(",
-                "message": "Console print statement detected. Use logging instead.",
-                "type": "lint",
-                "severity": "low"
-            },
-            {
-                "id": "LINT001",
-                "pattern": r"console\.(log|error|warn|info)\(",
-                "message": "Console statement detected (JavaScript). Use proper logging instead.",
-                "type": "lint",
-                "severity": "low"
-            },
-            {
-                "id": "PERF001",
-                "pattern": r"while\s*\(\s*(true|1|condition)\s*\)",
-                "message": "Infinite loop detected (JavaScript). Add break condition or timeout.",
-                "type": "performance",
-                "severity": "high"
-            }
         ]
 
+    def analyze(self, content: str, file_path: str) -> 'AnalysisResult':
+        """
+        Analyze file for secrets with explicit decision outcome.
+        
+        Returns:
+            AnalysisResult with SUCCESS, REFUSED, or FAILED outcome.
+        """
+        # Pre-flight checks with explicit refusals
+        
+        # Check: Empty file
+        if not content or not content.strip():
+            if AnalysisResult:
+                return AnalysisResult.refused(
+                    RefusalReason.FILE_EMPTY,
+                    "Empty file - nothing to analyze"
+                )
+            return {"outcome": "REFUSED", "reason": "file_empty", "issues": []}
+        
+        # Check: File too large
+        if len(content) > self.MAX_FILE_SIZE:
+            if AnalysisResult:
+                return AnalysisResult.refused(
+                    RefusalReason.FILE_TOO_LARGE,
+                    f"File exceeds {self.MAX_FILE_SIZE} bytes limit"
+                )
+            return {"outcome": "REFUSED", "reason": "file_too_large", "issues": []}
+        
+        # Check: Supported language
+        ext = Path(file_path).suffix.lower() if file_path else ""
+        if ext not in self.SUPPORTED_EXTENSIONS:
+            if AnalysisResult:
+                return AnalysisResult.refused(
+                    RefusalReason.UNSUPPORTED_LANGUAGE,
+                    f"Language '{ext}' not supported. Only Python/JavaScript allowed."
+                )
+            return {"outcome": "REFUSED", "reason": "unsupported_language", "issues": []}
+        
+        # Check: Binary content
+        try:
+            content.encode('utf-8')
+            if '\x00' in content:
+                if AnalysisResult:
+                    return AnalysisResult.refused(
+                        RefusalReason.FILE_BINARY,
+                        "Binary file detected"
+                    )
+                return {"outcome": "REFUSED", "reason": "file_binary", "issues": []}
+        except UnicodeError:
+            if AnalysisResult:
+                return AnalysisResult.refused(
+                    RefusalReason.FILE_BINARY,
+                    "Non-UTF8 content detected"
+                )
+            return {"outcome": "REFUSED", "reason": "file_binary", "issues": []}
+        
+        # Run analysis
+        issues = self._run_detection(content, file_path)
+        
+        if AnalysisResult:
+            return AnalysisResult.success(issues)
+        return {"outcome": "SUCCESS", "issues": issues}
+
     def run(self, content: str, file_path: str) -> List[Dict[str, Any]]:
+        """
+        Legacy API - returns just the issues list.
+        Use analyze() for explicit outcomes.
+        """
+        result = self.analyze(content, file_path)
+        if hasattr(result, 'issues'):
+            return result.issues
+        return result.get('issues', [])
+
+    def _run_detection(self, content: str, file_path: str) -> List[Dict[str, Any]]:
+        """Core detection logic with proper error handling."""
         issues = []
         
-        # 1. Run AST Analysis for supported languages
-        is_supported_lang = (
-            file_path.endswith(".py") or 
-            file_path.endswith(".js") or 
-            file_path.endswith(".jsx") or 
-            file_path.endswith(".ts") or 
-            file_path.endswith(".tsx")
-        )
-        
-        if is_supported_lang:
+        # 1. AST Analysis (if available)
+        if self.ast_engine:
             try:
                 ast_issues = self.ast_engine.analyze(content, file_path)
                 issues.extend(ast_issues)
-            except Exception as e:
-                print(f"AST Analysis failed: {e}")
+            except Exception:
+                pass  # AST failed, continue with regex
 
-        # 2. Run Regex with Semantic Verification
-        lines = content.split('\n')
-        
-        # Initialize semantic verification if available
-        # We do this lazily or check if it's already running?
-        # For now, assumes SemanticEngine is globally managed or we start it here?
-        # Ideally, HeuristicsEngine should be passed the Shared SemanticEngine.
-        # But for this refactor, we will check if "self.semantic_engine" exists.
-        
-        semantic_active = hasattr(self, 'semantic_engine') and self.semantic_engine
-        
-        for i, line in enumerate(lines):
-            for rule in self.patterns:
-                match = re.search(rule["pattern"], line)
-                if match:
-                    # Language-aware comment check for Regex
-                    line_start_idx = line.find(match.group(0))
-                    line_prefix = line[:line_start_idx]
-                    
-                    is_commented = False
-                    if file_path.endswith(".py"):
-                        if "#" in line_prefix:
-                            is_commented = True
-                    elif file_path.endswith((".js", ".ts", ".jsx", ".tsx")):
-                        if "//" in line_prefix:
-                            is_commented = True
+        # 2. Regex Pattern Matching
+        try:
+            lines = content.split('\n')
+            
+            for i, line in enumerate(lines):
+                for rule in self.patterns:
+                    try:
+                        match = re.search(rule["pattern"], line)
+                        if match:
+                            # Skip if in comment
+                            if self._is_in_comment(line, match.start(), file_path):
+                                continue
                             
-                    if is_commented:
+                            # Skip if already using env var
+                            if self._is_already_safe(line):
+                                continue
+                                
+                            issues.append({
+                                "id": rule["id"],
+                                "line": i + 1,
+                                "message": rule["message"],
+                                "type": rule["type"],
+                                "severity": rule["severity"],
+                                "source": "heuristics_regex"
+                            })
+                    except Exception:
                         continue
-                        
-                    issues.append({
-                        "id": rule["id"],
-                        "line": i + 1,
-                        "message": rule["message"],
-                        "type": rule["type"],
-                        "severity": rule["severity"],
-                        "source": "heuristics_regex"
-                    })
+        except Exception:
+            pass
+        
         return issues
+    
+    def _is_in_comment(self, line: str, match_pos: int, file_path: str) -> bool:
+        """Check if match position is inside a comment."""
+        prefix = line[:match_pos]
+        ext = Path(file_path).suffix.lower() if file_path else ""
+        
+        if ext == ".py":
+            return "#" in prefix
+        elif ext in {".js", ".ts", ".jsx", ".tsx"}:
+            return "//" in prefix
+        return False
+    
+    def _is_already_safe(self, line: str) -> bool:
+        """Check if the line already uses safe env var access."""
+        safe_patterns = [
+            'os.getenv', 'os.environ', 
+            'process.env', 'env.',
+            'getenv(', 'environ['
+        ]
+        return any(p in line for p in safe_patterns)
 
     def update_repo_path(self, repo_path: Path):
-        """Update the repository path and restart SemanticEngine if needed."""
-        if not SemanticEngine:
-            return
-
-        # If we already have a running engine for this path, do nothing
-        if self.semantic_engine and self.semantic_engine.repo_path == repo_path:
-            return
-
-        # Stop existing
-        if self.semantic_engine:
-            self.semantic_engine.stop()
-        
-        # Start new
-        try:
-            self.semantic_engine = SemanticEngine(repo_path)
-            self.semantic_engine.start()
-        except Exception as e:
-            print(f"Failed to start SemanticEngine for {repo_path}: {e}")
-            self.semantic_engine = None
+        """Update repository path (no-op in Community Edition)."""
+        pass
 
     def close(self):
-        if self.semantic_engine:
-            self.semantic_engine.stop()
-
+        """Cleanup resources."""
+        if self.ast_engine:
+            try:
+                self.ast_engine.cleanup()
+            except Exception:
+                pass

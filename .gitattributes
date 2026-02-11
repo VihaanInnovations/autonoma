@@ -1,0 +1,6 @@
+# Enforce LF line endings for shell scripts and text files
+# This prevents CRLF issues when Linux/Mac users clone the repo
+
+*.sh text eol=lf
+*.txt text eol=lf
+requirements.txt text eol=lf

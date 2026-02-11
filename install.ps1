@@ -1,5 +1,5 @@
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Hybrid Local AI Code Reviewer Installer" -ForegroundColor Cyan
+Write-Host "Autonoma Community Edition Installer" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -56,10 +56,10 @@ Write-Host ""
 # Bootstrap: Check if running standalone (no daemon folder)
 if (-not (Test-Path "daemon")) {
     Write-Host "[WARN] Core components not found locally." -ForegroundColor Yellow
-    Write-Host "[INFO] Downloading Autonoma Pilot Edition (Latest)..." -ForegroundColor Cyan
+    Write-Host "[INFO] Downloading Autonoma Community Edition (Latest)..." -ForegroundColor Cyan
     
-    $zipUrl = "https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Pilot_Edition.zip"
-    $zipPath = "Autonoma_Pilot_Edition.zip"
+    $zipUrl = "https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Community_Edition.zip"
+    $zipPath = "Autonoma_Community_Edition.zip"
     
     try {
         Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath
@@ -70,9 +70,9 @@ if (-not (Test-Path "daemon")) {
         Remove-Item $zipPath
         
         # Move inner content up if nested
-        if (Test-Path "Autonoma_Pilot_Edition") {
-            Move-Item -Path "Autonoma_Pilot_Edition\*" -Destination . -Force
-            Remove-Item "Autonoma_Pilot_Edition" -Force
+        if (Test-Path "Autonoma_Community_Edition") {
+            Move-Item -Path "Autonoma_Community_Edition\*" -Destination . -Force
+            Remove-Item "Autonoma_Community_Edition" -Force
         }
         
     } catch {
@@ -208,16 +208,14 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "1. Start the daemon:" -ForegroundColor White
-Write-Host "   cd daemon" -ForegroundColor Gray
-Write-Host "   .\venv\Scripts\Activate.ps1" -ForegroundColor Gray
-Write-Host "   python start.py" -ForegroundColor Gray
+Write-Host "   .\run.ps1" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2. Reload VS Code (if extension was installed):" -ForegroundColor White
 Write-Host "   Press Ctrl+Shift+P, then type: 'Developer: Reload Window'" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3. Verify installation:" -ForegroundColor White
 Write-Host "   - Open Command Palette (Ctrl+Shift+P)" -ForegroundColor Gray
-Write-Host "   - Search for 'Hybrid Reviewer'" -ForegroundColor Gray
+Write-Host "   - Search for 'Autonoma'" -ForegroundColor Gray
 Write-Host "   - You should see all commands available" -ForegroundColor Gray
 Write-Host ""
 Write-Host "4. Check daemon health:" -ForegroundColor White

@@ -5,7 +5,7 @@ export class DiagnosticsManager {
     private collection: vscode.DiagnosticCollection;
 
     constructor() {
-        this.collection = vscode.languages.createDiagnosticCollection('hybrid-reviewer');
+        this.collection = vscode.languages.createDiagnosticCollection('autonoma');
     }
 
     updateDiagnostics(document: vscode.TextDocument, issues: AnalysisIssue[]) {
@@ -25,7 +25,7 @@ export class DiagnosticsManager {
             const severity = this.mapSeverity(issue.severity);
 
             const diagnostic = new vscode.Diagnostic(range, issue.message, severity);
-            diagnostic.source = `HybridReviewer (${issue.source})`;
+            diagnostic.source = `Autonoma (${issue.source})`;
             diagnostic.code = issue.id;
 
             diagnostics.push(diagnostic);
@@ -39,22 +39,22 @@ export class DiagnosticsManager {
      */
     addDiagnostic(document: vscode.TextDocument, issue: AnalysisIssue) {
         const lineIndex = Math.max(0, issue.line - 1);
-        
+
         try {
             const line = document.lineAt(lineIndex);
             const range = line.range;
             const severity = this.mapSeverity(issue.severity);
 
             const diagnostic = new vscode.Diagnostic(range, issue.message, severity);
-            diagnostic.source = `HybridReviewer (${issue.source})`;
+            diagnostic.source = `Autonoma (${issue.source})`;
             diagnostic.code = issue.id;
 
             // Get existing diagnostics and add new one
             const existing = this.collection.get(document.uri) || [];
-            
+
             // Check if this issue already exists (avoid duplicates)
-            const exists = existing.some(d => 
-                d.code === issue.id && 
+            const exists = existing.some(d =>
+                d.code === issue.id &&
                 d.range.start.line === lineIndex
             );
 

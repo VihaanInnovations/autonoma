@@ -4,7 +4,7 @@ import { DiagnosticsManager } from './diagnostics';
 import { SummaryPanel } from './ui/summaryPanel';
 
 export function registerCommands(context: vscode.ExtensionContext, client: ReviewerClient, diagnostics: DiagnosticsManager) {
-    const analyzeCommand = vscode.commands.registerCommand('hybrid-reviewer.analyze', async () => {
+    const analyzeCommand = vscode.commands.registerCommand('autonoma.analyze', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showInformationMessage('No active editor found.');
@@ -84,7 +84,7 @@ export function registerCommands(context: vscode.ExtensionContext, client: Revie
                                     'Open Troubleshooting'
                                 ).then(selection => {
                                     if (selection === 'Open Troubleshooting') {
-                                        vscode.env.openExternal(vscode.Uri.parse('https://github.com/hybrid-ai-team/hybrid-reviewer#troubleshooting'));
+                                        vscode.env.openExternal(vscode.Uri.parse('https://github.com/autonoma-ai/autonoma-ai.github.io#troubleshooting'));
                                     }
                                 });
                             }
@@ -100,7 +100,7 @@ export function registerCommands(context: vscode.ExtensionContext, client: Revie
     });
 
     // 2. Set API Key Command
-    let setApiKeyCommand = vscode.commands.registerCommand('hybrid-reviewer.setApiKey', async () => {
+    let setApiKeyCommand = vscode.commands.registerCommand('autonoma.setApiKey', async () => {
         const provider = await vscode.window.showQuickPick(['autonoma', 'openai', 'anthropic'], {
             placeHolder: 'Select AI Provider',
             title: 'Set API Key'
@@ -137,13 +137,13 @@ export function registerCommands(context: vscode.ExtensionContext, client: Revie
     context.subscriptions.push(setApiKeyCommand);
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('hybrid-reviewer.analyzeProject', () => {
+        vscode.commands.registerCommand('autonoma.analyzeProject', () => {
             SummaryPanel.createOrShow(context.extensionUri);
         })
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('hybrid-reviewer.runProjectAnalysis', async () => {
+        vscode.commands.registerCommand('autonoma.runProjectAnalysis', async () => {
             vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 title: "Analyzing Project...",

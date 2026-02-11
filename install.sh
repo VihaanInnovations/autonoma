@@ -1,7 +1,8 @@
 #!/bin/bash
+set -euo pipefail
 
 echo "========================================"
-echo "Hybrid Local AI Code Reviewer Installer"
+echo "Autonoma Community Edition Installer"
 echo "========================================"
 echo ""
 
@@ -38,21 +39,26 @@ if command -v code &> /dev/null; then
     VSCODE_AVAILABLE=true
 else
     echo "[WARN] VS Code CLI not found. Extension will be packaged but not auto-installed."
-    echo "  You can install it manually: code --install-extension autonoma-ai-engine-1.0.0.vsix"
+    echo "  You can install it manually: code --install-extension autonoma-ai-engine-*.vsix"
     VSCODE_AVAILABLE=false
 fi
 
 echo ""
 
+# Check unzip (needed for bootstrap)
+if ! command -v unzip &> /dev/null; then
+    echo "[WARN] 'unzip' not found. Bootstrap download will fail if daemon folder is missing."
+    echo "  Install it: sudo apt-get install unzip  (Debian/Ubuntu)"
+fi
 
 # Bootstrap: Check if running standalone (no daemon folder)
 if [ ! -d "daemon" ]; then
     echo "[WARN] Core components not found locally."
-    echo "[INFO] Downloading Autonoma Pilot Edition (Latest)..."
-    
-    ZIP_URL="https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Pilot_Edition.zip"
-    ZIP_PATH="Autonoma_Pilot_Edition.zip"
-    
+    echo "[INFO] Downloading Autonoma Community Edition (Latest)..."
+
+    ZIP_URL="https://github.com/vihaaninnovations/autonoma/releases/latest/download/Autonoma_Community_Edition.zip"
+    ZIP_PATH="Autonoma_Community_Edition.zip"
+
     if command -v curl &> /dev/null; then
         curl -L -o "$ZIP_PATH" "$ZIP_URL"
     elif command -v wget &> /dev/null; then
@@ -65,13 +71,19 @@ if [ ! -d "daemon" ]; then
     if [ $? -eq 0 ]; then
         echo "[OK] Download complete."
         echo "[INFO] Extracting..."
+
+        if ! command -v unzip &> /dev/null; then
+            echo "[ERROR] 'unzip' is required but not installed."
+            exit 1
+        fi
+
         unzip -o "$ZIP_PATH"
         rm "$ZIP_PATH"
-        
+
         # Move up if nested
-        if [ -d "Autonoma_Pilot_Edition" ]; then
-            mv Autonoma_Pilot_Edition/* .
-            rm -rf Autonoma_Pilot_Edition
+        if [ -d "Autonoma_Community_Edition" ]; then
+            mv Autonoma_Community_Edition/* .
+            rm -rf Autonoma_Community_Edition
         fi
     else
         echo "[ERROR] Failed to download installer content."
@@ -83,8 +95,12 @@ fi
 echo "Step 1: Installing Python dependencies..."
 cd daemon || exit 1
 
-# Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
+# Create virtual environment if it doesn't exist or was created on Windows
+if [ ! -d "venv" ] || [ ! -f "venv/bin/activate" ]; then
+    if [ -d "venv" ]; then
+        echo "[INFO] Existing venv is not Linux-compatible (likely created on Windows). Recreating..."
+        rm -rf venv
+    fi
     echo "Creating virtual environment..."
     $PYTHON_CMD -m venv venv
 fi
@@ -107,7 +123,8 @@ echo ""
 
 # Step 2: Initialize database
 echo "Step 2: Initializing database..."
-$PYTHON_CMD -c "from db.db import init_db; init_db()"
+# Use 'python' which now points to the venv Python after activation
+python -c "from db.db import init_db; init_db()"
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] Failed to initialize database"
@@ -146,9 +163,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Package extension
+# Package extension (--allow-missing-repository avoids interactive prompts)
 echo "Packaging extension..."
-npm run package
+npx vsce package --allow-missing-repository
 
 if [ $? -ne 0 ]; then
     echo "[ERROR] Failed to package extension"
@@ -160,12 +177,18 @@ echo "[OK] Extension packaged successfully"
 # Install extension if VS Code CLI is available
 if [ "$VSCODE_AVAILABLE" = true ]; then
     echo "Installing extension to VS Code..."
-    # Find the VSIX file
-    VSIX_FILE=$(ls autonoma-ai-engine-*.vsix | head -n 1)
-    
+    # Find the VSIX file using glob instead of parsing ls
+    VSIX_FILE=""
+    for f in autonoma-ai-engine-*.vsix; do
+        if [ -f "$f" ]; then
+            VSIX_FILE="$f"
+            break
+        fi
+    done
+
     if [ -n "$VSIX_FILE" ]; then
         code --install-extension "$VSIX_FILE"
-        
+
         if [ $? -eq 0 ]; then
             echo "[OK] Extension installed successfully"
             echo "  Please reload VS Code (Ctrl+Shift+P > 'Developer: Reload Window')"
@@ -177,7 +200,7 @@ if [ "$VSCODE_AVAILABLE" = true ]; then
         echo "[ERROR] VSIX file not found after packaging."
         exit 1
     fi
-    
+
 else
     echo "[WARN] VS Code CLI not found. Extension packaged but not installed."
     echo "  Install manually: code --install-extension autonoma-ai-engine-*.vsix"
@@ -192,16 +215,15 @@ echo "========================================"
 echo ""
 echo "Next steps:"
 echo "1. Start the daemon:"
-echo "   cd daemon"
-echo "   source venv/bin/activate"
-echo "   python start.py"
+echo "   ./run.sh  (Linux/Mac)"
+echo "   OR: ./run.ps1  (Windows)"
 echo ""
 echo "2. Reload VS Code (if extension was installed):"
 echo "   Press Ctrl+Shift+P, then type: 'Developer: Reload Window'"
 echo ""
 echo "3. Verify installation:"
 echo "   - Open Command Palette (Ctrl+Shift+P)"
-echo "   - Search for 'Hybrid Reviewer'"
+echo "   - Search for 'Autonoma'"
 echo "   - You should see all commands available"
 echo ""
 echo "4. Check daemon health:"

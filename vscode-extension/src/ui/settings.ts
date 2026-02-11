@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 export class Settings {
     private static getConfiguration() {
-        return vscode.workspace.getConfiguration('hybridReviewer');
+        return vscode.workspace.getConfiguration('autonoma');
     }
 
     static get isLocalLLMEnabled(): boolean {

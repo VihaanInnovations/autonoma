@@ -224,8 +224,6 @@ def save_analysis_result(file_path: str, content: str, issues: list, project_id:
     finally:
         conn.close()
 
-        conn.close()
-
 def log_audit_event(project_id: str, user_id: str, action: str, target: str, details: str = ""):
     """
     Log an event to the AuditLog table.
@@ -334,36 +332,6 @@ def set_user_tier(user_id: str, tier: str):
 def update_user_tier(user_id: str, tier: str):
     """Update user tier (alias for set_user_tier for compatibility)."""
     set_user_tier(user_id, tier)
-
-def update_user_stripe_info(user_id: str, customer_id: str, subscription_id: str):
-    """Update Stripe customer and subscription IDs for a user."""
-    conn = get_db_connection()
-    try:
-        # Check if columns exist (for migration compatibility)
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(User)")
-        columns = [row[1] for row in cursor.fetchall()]
-        
-        if 'stripe_customer_id' not in columns:
-            # Run migration if columns don't exist
-            cursor.execute("ALTER TABLE User ADD COLUMN stripe_customer_id TEXT")
-            cursor.execute("ALTER TABLE User ADD COLUMN stripe_subscription_id TEXT")
-            cursor.execute("ALTER TABLE User ADD COLUMN subscription_status TEXT DEFAULT 'active'")
-        
-        conn.execute(
-            """
-            UPDATE User 
-            SET stripe_customer_id = ?, stripe_subscription_id = ?
-            WHERE user_id = ?
-            """,
-            (customer_id, subscription_id, user_id)
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"Failed to update Stripe info: {e}")
-        conn.rollback()
-    finally:
-        conn.close()
 
 if __name__ == "__main__":
     init_db()

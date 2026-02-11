@@ -12,7 +12,7 @@ suite('Extension Test Suite', () => {
 
     test('Commands are registered', async () => {
         const commands = await vscode.commands.getCommands(true);
-        assert.ok(commands.includes('hybrid-reviewer.analyze'));
-        assert.ok(commands.includes('hybrid-reviewer.analyzeProject'));
+        assert.ok(commands.includes('autonoma.analyze'));
+        assert.ok(commands.includes('autonoma.analyzeProject'));
     });
 });

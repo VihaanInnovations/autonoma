@@ -1,5 +1,5 @@
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   Autonoma Pilot Edition Launcher      " -ForegroundColor Cyan
+Write-Host "   Autonoma Community Edition Launcher  " -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

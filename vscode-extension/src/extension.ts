@@ -11,7 +11,7 @@ let diagnosticsManager: DiagnosticsManager;
 let myStatusBarItem: vscode.StatusBarItem | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Congratulations, your extension "hybrid-local-ai-code-reviewer" is now active!');
+    console.log('Autonoma AI Engine extension is now active!');
 
     // Initialize Components
     initSecrets(context);
@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
                         if (err) {
                             // Fallback or show error
                             vscode.window.showErrorMessage(`Failed to start daemon: ${stderr || err.message}. Ensure Docker container is running.`);
-                            vscode.env.openExternal(vscode.Uri.parse('https://github.com/hybrid-ai-team/hybrid-reviewer#troubleshooting'));
+                            vscode.env.openExternal(vscode.Uri.parse('https://github.com/autonoma-ai/autonoma-ai.github.io#troubleshooting'));
                         } else {
                             vscode.window.showInformationMessage('Daemon started successfully.');
                             // Retry connectivity ?
@@ -46,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
                     vscode.window.showErrorMessage(`Error starting daemon: ${e}`);
                 }
             } else if (selection === 'Open Troubleshooting') {
-                vscode.env.openExternal(vscode.Uri.parse('https://github.com/hybrid-ai-team/hybrid-reviewer#troubleshooting'));
+                vscode.env.openExternal(vscode.Uri.parse('https://github.com/autonoma-ai/autonoma-ai.github.io#troubleshooting'));
             }
         }
     });
@@ -132,11 +132,11 @@ export function activate(context: vscode.ExtensionContext) {
     // 3. Configuration Change
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {
-            if (e.affectsConfiguration('hybridReviewer')) {
+            if (e.affectsConfiguration('autonoma')) {
                 // Refresh config
                 const newConfig = getConfig();
                 client = new ReviewerClient(newConfig);
-                vscode.window.showInformationMessage('Hybrid Reviewer configuration updated.');
+                vscode.window.showInformationMessage('Autonoma configuration updated.');
             }
         })
     );

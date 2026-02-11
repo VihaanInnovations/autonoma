@@ -18,7 +18,16 @@ from typing import Dict, List, Set, Tuple, Optional, Any
 from dataclasses import dataclass
 import difflib
 from .dependency_graph import DependencyGraph
-from ..security.docker_runner import DockerTestRunner
+
+# DockerTestRunner is Enterprise-only; provide stub fallback
+try:
+    from ..security.docker_runner import DockerTestRunner
+except ImportError:
+    class DockerTestRunner:
+        """Stub for Community Edition (Docker test isolation is Enterprise-only)."""
+        is_available = False
+        def run_test(self, **kwargs):
+            return {'passed': False, 'error': 'Docker test runner requires Enterprise Edition'}
 
 logger = logging.getLogger(__name__)
 

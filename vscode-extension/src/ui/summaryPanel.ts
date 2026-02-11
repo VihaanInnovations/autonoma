@@ -15,7 +15,7 @@ export class SummaryPanel {
             message => {
                 switch (message.command) {
                     case 'analyzeProject':
-                        vscode.commands.executeCommand('hybrid-reviewer.runProjectAnalysis');
+                        vscode.commands.executeCommand('autonoma.runProjectAnalysis');
                         break;
                     case 'toggleRule':
                         Settings.setRuleOverride(message.ruleId, message.enabled);
@@ -46,8 +46,8 @@ export class SummaryPanel {
         }
 
         const panel = vscode.window.createWebviewPanel(
-            'hybridReviewerSummary',
-            'Hybrid Reviewer Summary',
+            'autonomaSummary',
+            'Autonoma Summary',
             column || vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -80,7 +80,7 @@ export class SummaryPanel {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Hybrid Reviewer Summary</title>
+            <title>Autonoma Summary</title>
             <style>
                 body { font-family: sans-serif; padding: 20px; }
                 .issue-group { margin-bottom: 20px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }

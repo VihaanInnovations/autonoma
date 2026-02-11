@@ -9,9 +9,7 @@ from typing import Optional
 password = os.getenv("PASSWORD", "default_secret")  # SEC001: Hardcoded password
 
 # SECURITY ISSUE: Hardcoded API key
-import logging
-logging.info('Retrieving dynamic API key')
-api_key = os.getenv('API_KEY')         # SEC002: Hardcoded API key detected
+api_key = os.getenv("API_KEY")  # SEC002: Hardcoded API key
 
 def authenticate_user(username: str, user_password: str) -> bool:
     """
@@ -25,6 +23,6 @@ def authenticate_user(username: str, user_password: str) -> bool:
 # PERFORMANCE ISSUE: Infinite loop
 def process_data():
     """Process data in an infinite loop."""
-    while False: # Fixed infinite loop  # PERF001: Infinite loop
+    while True:  # PERF001: Infinite loop
         # Missing break condition
         pass

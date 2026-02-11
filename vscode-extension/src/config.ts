@@ -14,7 +14,7 @@ export interface ExtensionConfig {
 }
 
 export function getConfig(): ExtensionConfig {
-    const config = vscode.workspace.getConfiguration('hybridReviewer');
+    const config = vscode.workspace.getConfiguration('autonoma');
     return {
         enableLocalLLM: config.get<boolean>('enableLocalLLM', false),
         enableCloudLLM: config.get<boolean>('enableCloudLLM', false),
@@ -29,7 +29,7 @@ export function getConfig(): ExtensionConfig {
     };
 }
 
-const SECRET_KEY_PREFIX = 'hybridReviewer.apiKey.';
+const SECRET_KEY_PREFIX = 'autonoma.apiKey.';
 let secretStorage: vscode.SecretStorage | undefined;
 
 export function initSecrets(context: vscode.ExtensionContext) {

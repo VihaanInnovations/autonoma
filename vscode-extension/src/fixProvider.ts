@@ -15,7 +15,7 @@ export class LocalAIFixProvider implements vscode.CodeActionProvider {
         const actions: vscode.CodeAction[] = [];
 
         for (const diagnostic of context.diagnostics) {
-            // Check if it's our diagnostic (source starts with "Hybrid")
+            // Check if it's our diagnostic (source starts with "Autonoma")
             // Or just allow generic? For now, let's allow any.
 
             const action = new vscode.CodeAction(`Fix with Local AI: ${diagnostic.message}`, vscode.CodeActionKind.QuickFix);
@@ -24,7 +24,7 @@ export class LocalAIFixProvider implements vscode.CodeActionProvider {
 
             // Define the command that will run when selected
             action.command = {
-                command: 'hybrid-reviewer.applyFix',
+                command: 'autonoma.applyFix',
                 title: 'Apply Fix',
                 arguments: [document, diagnostic.range, diagnostic.message]
             };
@@ -38,7 +38,7 @@ export class LocalAIFixProvider implements vscode.CodeActionProvider {
 
 export async function registerFixCommand(context: vscode.ExtensionContext, config: ExtensionConfig) {
     // Register the command handler
-    context.subscriptions.push(vscode.commands.registerCommand('hybrid-reviewer.applyFix', async (document: vscode.TextDocument, range: vscode.Range, message: string) => {
+    context.subscriptions.push(vscode.commands.registerCommand('autonoma.applyFix', async (document: vscode.TextDocument, range: vscode.Range, message: string) => {
 
         const code = document.getText(range);
         if (!code.trim()) return;
