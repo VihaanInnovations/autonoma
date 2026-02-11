@@ -110,7 +110,13 @@ Contact: visuvalingamvithushan@gmail.com
 
 ## Philosophy
 
-A tool that fixes everything understands nothing. Autonoma knows its limits. The refusal to act — when action would cause harm — is the feature.
+> "One laptop with a spreadsheet can outperform a skyscraper of several hundred human computers... Companies that are entirely AI will demolish companies that are not." — Elon Musk
+>
+> **Autonoma is that spreadsheet.**
+>
+> Manual code review is the skyscraper. It doesn't matter how many humans you throw at the problem — if you are manually checking for secrets, you cannot compete with a tool that fixes them autonomously.
+>
+> A tool that fixes everything understands nothing. Autonoma knows its limits. The refusal to act — when action would cause harm — is the feature.
 
 ---
 
