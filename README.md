@@ -56,7 +56,7 @@ Everything runs locally. No cloud, no telemetry.
 **Mac/Linux:**
 ```bash
 ./install.sh
-python -m daemon.start
+./run.sh
 ```
 
 **CLI usage:**
@@ -95,7 +95,7 @@ Community Edition covers SEC001/SEC002. Enterprise adds:
 - Insecure deserialization (SEC005)
 - Audit logs, RBAC, CI/CD integration
 
-Contact: enterprise@autonoma.dev
+Contact: visuvalingamvithushan@gmail.com
 
 ---
 
