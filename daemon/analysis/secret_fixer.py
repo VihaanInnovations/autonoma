@@ -106,11 +106,23 @@ class SecretFixer:
             # Check for dotenv in package.json
             pkg_file = self.repo_path / 'package.json'
             if pkg_file.exists():
-                content = pkg_file.read_text(encoding='utf-8', errors='ignore')
-                if 'dotenv' in content:
-                    self._has_env_contract = True
-                    logger.debug("Env contract found: dotenv in package.json")
-                    return True
+                try:
+                    import json
+                    data = json.loads(pkg_file.read_text(encoding='utf-8', errors='ignore'))
+                    
+                    # STRICT DEP CHECK
+                    deps = data.get('dependencies', {})
+                    dev_deps = data.get('devDependencies', {})
+                    all_deps = {**deps, **dev_deps}
+                    
+                    # Check for exact package names
+                    target_pkgs = {'dotenv', 'dotenv-flow', 'react-native-dotenv', 'python-dotenv'}
+                    if any(pkg in all_deps for pkg in target_pkgs):
+                        self._has_env_contract = True
+                        logger.debug("Env contract found: dotenv package in package.json")
+                        return True
+                except Exception:
+                    pass
                     
         except Exception as e:
             logger.debug(f"Error checking env contract: {e}")
@@ -127,7 +139,8 @@ class SecretFixer:
         # Pre-flight checks
         
         # Check 1: Is fix type supported?
-        if issue_id not in ["SEC001", "SEC002"]:
+        # Update IDs to SECK namespace
+        if issue_id not in ["SECK001", "SECK002", "SEC001", "SEC002"]: # Support both for backward compat for now
             return SecretFixResult(
                 outcome="REFUSED",
                 reason="issue_type_not_supported",
@@ -159,12 +172,28 @@ class SecretFixer:
                 message="No .env file or dotenv dependency found. "
                         "Create a .env.example file first to establish env var contract."
             )
-        
+            
+        # Check 4: Is file in sensitive context (test/docs)? (Landmine #6)
+        if self._is_sensitive_context(file_path):
+            return SecretFixResult(
+                outcome="REFUSED",
+                reason="sensitive_context",
+                message=f"Refusing to auto-fix secret in test/doc file: {file_path.name}"
+            )
+
+        # Check 4: Is file in sensitive context (test/docs)? (Landmine #6)
+        if self._is_sensitive_context(file_path):
+            return SecretFixResult(
+                outcome="REFUSED",
+                reason="sensitive_context",
+                message=f"Refusing to auto-fix secret in test/doc file: {file_path.name}"
+            )
+
         # Apply the fix
         try:
-            if issue_id == "SEC001":
+            if issue_id in ["SECK001", "SEC001"]:
                 return self._fix_password(code, file_path)
-            elif issue_id == "SEC002":
+            elif issue_id in ["SECK002", "SEC002"]:
                 return self._fix_api_key(code, file_path)
         except Exception as e:
             return SecretFixResult(
@@ -178,6 +207,50 @@ class SecretFixer:
             reason="no_fix_applied",
             message="No matching patterns found"
         )
+    
+    def _fix_password(self, code: str, file_path: Path) -> SecretFixResult:
+        """Fix SECK001: Hardcoded password."""
+        # ... (Same logic, pattern matching doesn't depend on ID)
+        return self._fix_password_impl(code, file_path) # Wait, logic is inline.
+        # I'll keep the logic inline below but just wrapped in existing methods.
+        # Since I'm using replace_file_content, I am replacing the block above.
+        pass
+
+    # ... (skipping inline logic for brevity in this thought trace, 
+    # but I need to make sure I don't delete the methods. 
+    # The replace block targets lines 172-182 approximately for the dispatch logic.
+    # And then the _is_sensitive_context at the end.)
+
+    # Wait, the tool requires me to replace contiguous block.
+    # I should target the dispatch logic first.
+
+    def _is_sensitive_context(self, file_path: Path) -> bool:
+        """Check if file is in a context where auto-fix is dangerous."""
+        if not file_path: return False
+        
+        try:
+            parts = set(p.lower() for p in file_path.parts)
+            
+            # Segment Check
+            risky_segments = {'tests', 'test', 'docs', 'examples', 'fixtures', 'spec', '__tests__', 'mock'}
+            if not parts.isdisjoint(risky_segments):
+                return True
+                
+            # Filename Logic
+            name = file_path.name.lower()
+            if (name.startswith("test_") or 
+                name.endswith("_test.py") or 
+                name.endswith(".test.js") or 
+                name.endswith(".spec.js") or 
+                name.startswith("mock_")):
+                return True
+        except Exception:
+            # Fallback
+            path_str = str(file_path).lower()
+            if any(x in path_str for x in ["/test/", "/docs/", "/examples/"]):
+                return True
+            
+        return False
     
     def _fix_password(self, code: str, file_path: Path) -> SecretFixResult:
         """Fix SEC001: Hardcoded password."""
@@ -358,3 +431,31 @@ class SecretFixer:
             return var_lower.upper()
         
         return None
+        
+    def _is_sensitive_context(self, file_path: Path) -> bool:
+        """Check if file is in a context where auto-fix is dangerous."""
+        if not file_path: return False
+        
+        try:
+            parts = set(p.lower() for p in file_path.parts)
+            
+            # Segment Check
+            risky_segments = {'tests', 'test', 'docs', 'examples', 'fixtures', 'spec', '__tests__', 'mock'}
+            if not parts.isdisjoint(risky_segments):
+                return True
+                
+            # Filename Logic
+            name = file_path.name.lower()
+            if (name.startswith("test_") or 
+                name.endswith("_test.py") or 
+                name.endswith(".test.js") or 
+                name.endswith(".spec.js") or 
+                name.startswith("mock_")):
+                return True
+        except Exception:
+            # Fallback
+            path_str = str(file_path).lower()
+            if any(x in path_str for x in ["/test/", "/docs/", "/examples/"]):
+                return True
+            
+        return False
