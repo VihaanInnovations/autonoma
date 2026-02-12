@@ -88,6 +88,13 @@ Write-Host "Step 1: Installing Python dependencies..." -ForegroundColor Yellow
 cd daemon
 
 # Create virtual environment if it doesn't exist
+if (Test-Path "venv") {
+    if (-not (Test-Path "venv\Scripts\python.exe")) {
+        Write-Host "[INFO] Existing venv is not Windows-compatible. Recreating..." -ForegroundColor Yellow
+        Remove-Item -Path "venv" -Recurse -Force
+    }
+}
+
 if (-not (Test-Path "venv")) {
     Write-Host "Creating virtual environment..." -ForegroundColor Cyan
     & $pythonCmd -m venv venv

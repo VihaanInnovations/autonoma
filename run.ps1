@@ -33,7 +33,17 @@ try {
 }
 
 # 3. Environment Setup
+# 3. Environment Setup
 $venvPath = "daemon\venv"
+$venvPython = "$venvPath\Scripts\python.exe"
+
+if (Test-Path $venvPath) {
+    if (-not (Test-Path $venvPython)) {
+        Write-Host "[INFO] Existing venv is not Windows-compatible (likely created on WSL/Linux). Recreating..." -ForegroundColor Yellow
+        Remove-Item -Path $venvPath -Recurse -Force
+    }
+}
+
 if (-not (Test-Path $venvPath)) {
     Write-Host "[INFO] First time setup: Creating Virtual Environment..." -ForegroundColor Yellow
     & $pythonCmd -m venv $venvPath
