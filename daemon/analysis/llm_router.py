@@ -19,7 +19,7 @@ class LLMRouter:
             return "cloud" if enable_cloud else "none"
         else: # auto
             if enable_local and enable_cloud:
-                return "both" # Run parallel or fallback? For "Hybrid" we often want both insights.
+                return "both" # Run parallel or fallback? For full analysis we often want both insights.
             elif enable_cloud:
                 return "cloud"
             elif enable_local:

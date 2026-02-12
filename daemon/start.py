@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Startup script for Hybrid Local AI Code Reviewer Daemon
+Startup script for Autonoma Community Edition Daemon
 """
 import sys
 import os
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     default_host = "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"
     host = os.environ.get("HOST", default_host)
     
-    print(f"Starting Hybrid Local AI Code Reviewer Daemon on {host}:{port}")
+    print(f"Starting Autonoma Community Edition Daemon on {host}:{port}")
     print("Press CTRL+C to stop")
     
     uvicorn.run(
