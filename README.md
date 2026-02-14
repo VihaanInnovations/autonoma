@@ -1,124 +1,84 @@
 # Autonoma
 
-> "Refusal is a valid outcome."
+**Deterministic secret remediation with strict safety boundaries.**
 
-A local-first code security tool that knows when *not* to fix.
+Autonoma is a local-first code security tool that deterministically fixes hardcoded secrets and intentionally refuses unsafe modifications.
 
----
+## Community Edition
 
-## What it does
+### Autonoma Community:
 
-Autonoma scans your code for hardcoded secrets and fixes them automatically — but only when it's safe to do so.
+- Fixes hardcoded passwords and API keys (SEC001, SEC002)
+- Detects SQL injection patterns (SEC003)
+- Detects SSTI/XSS patterns (SEC004)
+- Detects insecure deserialization (SEC005)
+- Refuses complex security fixes by design
+- Runs fully locally. No telemetry. No cloud dependency.
 
-```diff
-# Before
-- password = "supersecret123"
-- api_key = "sk-live-abc123xyz"
+## Example
 
-# After auto-fix
-+ password = os.getenv("DB_PASSWORD")
-+ api_key = os.getenv("API_KEY")
+### Before
+```python
+password = "supersecret123"
+api_key = "sk-live-abc123xyz"
 ```
 
-If Autonoma can't find the corresponding environment variable pattern, it refuses to fix. Broken fixes are worse than no fix at all.
-
----
-
-## How results work
-
-| Outcome | What it means |
-|---------|---------------|
-| SUCCESS | Fix applied |
-| REFUSED | Declined on purpose — fix would break something |
-| FAILED | Bug in Autonoma (report it) |
-
-Refusal isn't failure. It's the system working as intended.
-
----
-
-## What it can fix (Community Edition)
-
-- **SEC001** — Hardcoded passwords → `os.getenv("PASSWORD")`
-- **SEC002** — Hardcoded API keys → `os.getenv("API_KEY")`
-
-Everything runs locally. No cloud, no telemetry.
-
----
-
-## Quick start
-
-**Windows:**
-```powershell
-./install.ps1
-./run.ps1
+### After
+```python
+password = os.getenv("PASSWORD")
+api_key = os.getenv("API_KEY")
 ```
 
-**Mac/Linux:**
+## Safety Model
+
+Autonoma applies deterministic fixes only when:
+
+1. The replacement is structurally safe
+2. The environment contract can be established
+3. The modification does not introduce ambiguity
+
+### Outcomes:
+
+| Status | Meaning |
+| :--- | :--- |
+| FIXED | Deterministic fix applied |
+| REFUSED | Modification intentionally declined |
+| SKIPPED | Already compliant |
+| FAILED | Tool error (reportable bug) |
+
+**Refusal is intentional — not a failure.**
+
+## CLI Usage
+
 ```bash
-./install.sh
-./run.sh
+python -m daemon.cli analyze ./repo --auto-fix
 ```
 
-**CLI usage:**
-```bash
-python -m daemon.cli analyze ./your-repo --auto-fix --verbose
-```
+CLI is the primary supported interface.
 
-Open VS Code and Autonoma connects automatically.
+VS Code extension: experimental preview.
 
----
+## Architecture
 
-## How it works
-
-1. Parses code at the AST level (not regex)
-2. Detects hardcoded secrets
-3. Checks if the fix would break anything
-4. Applies fix only if safe; refuses with reason if not
-
----
-
-## Local-first
-
-- Runs on your machine
-- No code sent anywhere
-- No cloud credentials needed
-- Works air-gapped
-
----
+- Python 3.10+
+- Deterministic AST-based secret remediation
+- Conservative high-confidence pattern detection (no taint analysis)
+- Community Edition does not rely on remote LLMs or cloud services
 
 ## Enterprise Edition
 
-Community Edition covers SEC001/SEC002. Enterprise adds:
+Designed for teams that require governance, auditability, and CI enforcement.
 
-- SQL injection detection (SEC003)
-- XSS/SSTI detection (SEC004)
-- Insecure deserialization (SEC005)
-- Audit logs, RBAC, CI/CD integration
+Enterprise adds:
+
+- Policy enforcement
+- Audit logs
+- Approval workflows
+- Multi-repository orchestration
+- CI/CD integration
+- Role-based access control
 
 Contact: visuvalingamvithushan@gmail.com
-
----
-
-## Tech
-
-- Python 3.10+
-- Native AST parsing
-- Qwen 2.5-Coder (local LLM)
-- Daemon + VS Code extension
-
----
-
-## Philosophy
-
-> "One laptop with a spreadsheet can outperform a skyscraper of several hundred human computers... Companies that are entirely AI will demolish companies that are not." — Elon Musk
->
-> **Autonoma is that spreadsheet.**
->
-> Manual code review is the skyscraper. It doesn't matter how many humans you throw at the problem — if you are manually checking for secrets, you cannot compete with a tool that fixes them autonomously.
->
-> A tool that fixes everything understands nothing. Autonoma knows its limits. The refusal to act — when action would cause harm — is the feature.
-
----
 
 ## License
 

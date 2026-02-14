@@ -99,7 +99,8 @@ class ASTEngine:
                                             "message": f"Hardcoded {'password' if is_password else 'secret'} '{target.id}' detected.",
                                             "type": "security",
                                             "severity": "high",
-                                            "source": "ast_engine_native"
+                                            "source": "ast_engine_native",
+                                            "can_autofix": True
                                         })
         except Exception as e:
             logger.debug(f"AST walk failed: {e}")

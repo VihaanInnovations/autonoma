@@ -158,6 +158,9 @@ class SecretDetector:
         issue_id = "SECK002"
         if "password" in variable_name.lower():
             issue_id = "SECK001"
+
+        if "aws_secret" in variable_name:
+            pass
             
         # FIX ALIGNMENT: Only mark auto-fixable if variable name matches SecretFixer patterns
         # SecretFixer supports: password, api_key, secret, token, etc.
@@ -172,15 +175,18 @@ class SecretDetector:
         SUPPORTED_FIX_ROOTS = {'password', 'passwd', 'pwd', 'api_key', 'apikey', 'api_secret', 'secret', 'token', 'auth_token', 'auth_key', 'access_key', 'secret_key'}
         
         # If generic heuristic, strict check
+        # BUT if confidence is HIGH, we trust it enough to attempt fix (SecretFixer has its own checks)
         if source == "generic_heuristic" and can_autofix:
-            is_supported = False
-            for root in SUPPORTED_FIX_ROOTS:
-                if root in variable_name.lower():
-                    is_supported = True
-                    break
-            if not is_supported:
-                can_autofix = False
-                outcome_rec = "WARN_ONLY" # Downgrade to WARN if we can't fix it
+            # Only enforce root check for Lower/Medium confidence to avoid noise
+            if confidence < 0.7:
+                is_supported = False
+                for root in SUPPORTED_FIX_ROOTS:
+                     if root in variable_name.lower():
+                        is_supported = True
+                        break
+                if not is_supported:
+                    can_autofix = False
+                    outcome_rec = "WARN_ONLY" # Downgrade to WARN if we can't fix it
 
         return {
             "id": issue_id,

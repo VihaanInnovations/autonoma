@@ -148,16 +148,40 @@ class HeuristicsEngine:
                 # Log error but don't crash
                 pass
 
+        # 3. Security Detectors (High Confidence SEC003-SEC005)
+        try:
+            from .security_detectors import SecurityDetectors
+            sec_issues = SecurityDetectors.analyze_file(content, file_path)
+            if sec_issues:
+                all_raw.extend(sec_issues)
+        except ImportError:
+            pass
+        except Exception:
+            pass
+
         final_issues = []
         for issue in all_raw:
             # 1. Standardize basics
             issue_id = issue.get("id", "UNKNOWN")
-            confidence = issue.get("confidence", 0.0) 
+            confidence = issue.get("confidence", 0.0)
+            # Map string confidence to float if needed (SecurityDetectors uses "HIGH")
+            if isinstance(confidence, str):
+                if confidence.upper() == "HIGH": confidence = 0.9
+                elif confidence.upper() == "MEDIUM": confidence = 0.6
+                else: confidence = 0.3
+            
             message = issue.get("message", "")
             can_autofix = issue.get("can_autofix", False)
             
+            # Force autofix for standard secrets if high confidence (unless sensitive context below)
+            # This ensures AST/Generic findings are eligible for fix if high confidence
+            if issue_id in ["SEC001", "SEC002", "SECK001", "SECK002"] and confidence >= 0.7:
+                 can_autofix = True
+
             # 2. Context Policy (Force refusal FIRST)
-            if self._is_sensitive_context(file_path):
+            is_sensitive = self._is_sensitive_context(file_path)
+            
+            if is_sensitive:
                 can_autofix = False
                 # Downgrade confidence for visibility
                 confidence = min(confidence, 0.6) 
@@ -181,8 +205,64 @@ class HeuristicsEngine:
                 "confidence": confidence,
                 "can_autofix": can_autofix
             })
+
+        
+        
+        # Robust Deduplication by Line
+        # Priority: Specific (SECK001/2) > Fixable > Generic (SECK003_WARN) > Confidence
+        line_map = {}
+        
+        for issue in final_issues:
+            try:
+                line = int(issue["line"])
+            except (ValueError, TypeError):
+                line = issue["line"]
             
-        return final_issues
+            if line not in line_map:
+                line_map[line] = issue
+                continue
+            
+            existing = line_map[line]
+            
+            # Helper to score issues
+            def score(i):
+                s = 0
+                # 1. Specificity
+                if i["id"] in ["SECK001", "SECK002"]: s += 100
+                elif i["id"] == "SECK003_WARN": s += 50
+                
+                # 2. Fixability
+                if i.get("can_autofix"): s += 20
+                
+                # 3. Confidence
+                conf = i.get("confidence", 0.0)
+                if isinstance(conf, str):
+                    conf = 0.9 if conf.upper() == "HIGH" else 0.5
+                s += conf
+                return s
+            
+            # If new issue has higher score, replace existing
+            if issue["id"].startswith("SECK") and existing["id"].startswith("SECK"):
+                if score(issue) > score(existing):
+                    line_map[line] = issue
+            else:
+                pass
+
+        # Re-assemble
+        deduped = []
+        
+        # 1. Add all non-SECK issues
+        for issue in final_issues:
+            if not issue["id"].startswith("SECK"):
+                deduped.append(issue)
+        
+        # 2. Add winner SECK issue per line
+        for line in sorted(line_map.keys()):
+            issue = line_map[line]
+            if issue["id"].startswith("SECK"):
+                deduped.append(issue)
+        
+        return deduped
 
     def _is_sensitive_context(self, file_path: str) -> bool:
         """Check if file is in a context where auto-fix is dangerous."""

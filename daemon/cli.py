@@ -97,9 +97,10 @@ async def _run_analysis(path_str: str, project_id: str, fmt: str, fail_on_high: 
             if verbose and fmt == 'text':
                 severity = issue.get('severity', 'UNKNOWN')
                 rule_id = issue.get('id', 'UNKNOWN')
-                line = issue.get('line', '?')
                 msg = issue.get('message', issue.get('description', ''))
-                click.echo(f"    [{severity}] {rule_id} (line {line}): {msg}")
+                line = issue.get('line', '?')
+                # User requested specific format: FOUND {ID} {Severity} {file:line} {One-line reason}
+                click.echo(f"    FOUND: {rule_id} ({severity}) {str(file_path.relative_to(base_path))}:{line} {msg}")
 
     # Output results
     if fmt == 'json':
@@ -127,14 +128,17 @@ async def _run_analysis(path_str: str, project_id: str, fmt: str, fail_on_high: 
                 click.echo(f"[DEBUG] Generating fix for {issue.get('id')} in {file_path}")
                 
                 try:
-                    fixed = await engine.generate_fix(code, issue)
-                    if fixed and fixed != code:
+                    fixed, msg = await engine.generate_fix(code, issue)
+                    if not fixed and msg.startswith("REFUSED"):
+                        # Distinct output for refusal
+                        click.echo(f"  REFUSED: {issue.get('file')} - {msg.replace('REFUSED: ', '')}")
+                    elif fixed and fixed != code:
                         file_path.write_text(fixed, encoding='utf-8')
-                        click.echo(f"  Fixed: {issue.get('file')}")
+                        click.echo(f"  FIXED:   {issue.get('file')} ({msg})")
                     else:
-                        click.echo(f"[DEBUG] Fix generation returned same code or None")
+                        click.echo(f"  SKIPPED: {issue.get('file')} - {msg}")
                 except Exception as e:
-                    click.echo(f"[DEBUG] Fix generation failed: {e}")
+                    click.echo(f"  FAILED:  {issue.get('file')} - {e}")
 
     # Exit code
     if fail_on_high and high_count > 0:
