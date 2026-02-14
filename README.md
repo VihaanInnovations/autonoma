@@ -2,16 +2,16 @@
 
 **Deterministic secret remediation with strict safety boundaries.**
 
-Autonoma is a local-first code security tool that deterministically fixes hardcoded secrets and intentionally refuses unsafe modifications.
+Autonoma is a local-first code security tool that deterministically fixes hardcoded secrets and deliberately refuses unsafe modifications.
 
 ## Community Edition
 
 ### Autonoma Community:
 
 - Fixes hardcoded passwords and API keys (SEC001, SEC002)
-- Detects SQL injection patterns (SEC003)
-- Detects SSTI/XSS patterns (SEC004)
-- Detects insecure deserialization (SEC005)
+- Detects high-risk SQL string construction in `.execute()` calls (SEC003)
+- Detects Python Server-Side Template Injection (SSTI) patterns (SEC004)
+- Detects insecure deserialization patterns in pickle and unsafe yaml usage (SEC005)
 - Refuses complex security fixes by design
 - Runs fully locally. No telemetry. No cloud dependency.
 
@@ -61,8 +61,8 @@ VS Code extension: experimental preview.
 ## Architecture
 
 - Python 3.10+
-- Deterministic AST-based secret remediation
-- Conservative high-confidence pattern detection (no taint analysis)
+- Deterministic AST-based secret remediation (SEC001, SEC002)
+- Conservative, line-level high-confidence pattern detection (SEC003–SEC005; no taint analysis)
 - Community Edition does not rely on remote LLMs or cloud services
 
 ## Enterprise Edition
