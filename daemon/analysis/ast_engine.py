@@ -66,43 +66,74 @@ class ASTEngine:
                 # Detect hardcoded secrets in assignments
                 if isinstance(node, ast.Assign):
                     for target in node.targets:
+                        # 1. Variable Assignment: var_name = "secret"
                         if isinstance(target, ast.Name):
-                            var_name = target.id.lower()
+                            var_name = target.id
+                            self._check_secret_assignment(node, var_name, var_name, issues)
                             
-                            # Secret keywords for SEC001/SEC002
-                            secret_keywords = [
-                                'password', 'passwd', 'pwd',  # SEC001
-                                'api_key', 'apikey', 'secret', 'token', 
-                                'auth_token', 'auth', 'credential', 'key'  # SEC002
-                            ]
+                        # 2. os.environ Assignment: os.environ["KEY"] = "secret"
+                        elif isinstance(target, ast.Subscript):
+                            # Check if target is os.environ
+                            is_environ = False
+                            if isinstance(target.value, ast.Attribute):
+                                if isinstance(target.value.value, ast.Name) and target.value.value.id == 'os':
+                                    if target.value.attr == 'environ':
+                                        is_environ = True
                             
-                            if any(k in var_name for k in secret_keywords):
-                                # Check if value is a string literal
-                                if isinstance(node.value, (ast.Constant, ast.Str)):
-                                    try:
-                                        val = node.value.s if isinstance(node.value, ast.Str) else node.value.value
-                                    except AttributeError:
-                                        val = getattr(node.value, 'value', None)
-                                    
-                                    if isinstance(val, str) and len(val) > 0:
-                                        # Skip if it's already an env lookup
-                                        if 'os.getenv' in val or 'os.environ' in val:
-                                            continue
-                                        
-                                        # Determine issue type
-                                        is_password = any(k in var_name for k in ['password', 'passwd', 'pwd'])
-                                        issue_id = "SEC001" if is_password else "SEC002"
-                                        
-                                        issues.append({
-                                            "id": issue_id,
-                                            "line": node.lineno,
-                                            "message": f"Hardcoded {'password' if is_password else 'secret'} '{target.id}' detected.",
-                                            "type": "security",
-                                            "severity": "high",
-                                            "source": "ast_engine_native",
-                                            "can_autofix": True
-                                        })
+                            if is_environ:
+                                # Extract key name
+                                key_name = None
+                                slice_node = target.slice
+                                # Handle Python 3.9+ vs older 3.x AST differences for Subscript
+                                if isinstance(slice_node, (ast.Constant, ast.Str)):
+                                    key_name = slice_node.s if isinstance(slice_node, ast.Str) else slice_node.value
+                                
+                                if key_name and isinstance(key_name, str):
+                                    self._check_secret_assignment(node, key_name, key_name, issues, is_environ=True)
+
         except Exception as e:
             logger.debug(f"AST walk failed: {e}")
         
         return issues
+
+    def _check_secret_assignment(self, node, check_name, original_name, issues, is_environ=False):
+        """Helper to check if an assignment value is a hardcoded secret."""
+        check_name_lower = check_name.lower()
+        import ast
+        
+        # Secret keywords for SEC001/SEC002
+        secret_keywords = [
+            'password', 'passwd', 'pwd',  # SEC001
+            'api_key', 'apikey', 'secret', 'token', 
+            'auth_token', 'auth', 'credential', 'key', # SEC002
+            'azure_vision_key', 'openai_api_key' # specifics seen in user repo
+        ]
+        
+        if any(k in check_name_lower for k in secret_keywords):
+            # Check if value is a string literal
+            if isinstance(node.value, (ast.Constant, ast.Str)):
+                try:
+                    val = node.value.s if isinstance(node.value, ast.Str) else node.value.value
+                except AttributeError:
+                    val = getattr(node.value, 'value', None)
+                
+                if isinstance(val, str) and len(val) > 0:
+                    # Skip if it's already an env lookup
+                    if 'os.getenv' in val or 'os.environ' in val:
+                        return
+                    
+                    # Determine issue type
+                    is_password = any(k in check_name_lower for k in ['password', 'passwd', 'pwd'])
+                    issue_id = "SEC001" if is_password else "SEC002"
+                    
+                    # For os.environ, we report the key name as the identifier
+                    msg_target = f'os.environ["{original_name}"]' if is_environ else f"'{original_name}'"
+                    
+                    issues.append({
+                        "id": issue_id,
+                        "line": node.lineno,
+                        "message": f"Hardcoded {'password' if is_password else 'secret'} {msg_target} detected.",
+                        "type": "security",
+                        "severity": "high",
+                        "source": "ast_engine_native"
+                    })
