@@ -50,92 +50,29 @@ class FixEngine:
         if isinstance(issue_or_msg, dict):
             file_path = issue_or_msg.get('file', '')
             
-        if issue_id == "SEC001" and file_path.endswith('.py'):
-            # Fix hardcoded password -> os.getenv("PASSWORD")
+        if issue_id in ["SEC001", "SEC002"]:
+            # Delegate to SecretFixer
             try:
-                lines = code.splitlines()
-                target_line_idx = -1
-                if isinstance(issue_or_msg, dict) and 'line' in issue_or_msg:
-                    target_line_idx = issue_or_msg['line'] - 1
+                from daemon.analysis.secret_fixer import SecretFixer
+                fixer = SecretFixer(self.repo_path)
                 
-                if target_line_idx >= 0 and target_line_idx < len(lines):
-                    line = lines[target_line_idx]
-                    
-                    # 1. Variable Assignment
-                    match = re.search(r'(\w+)\s*=\s*["\']([^"\']+)["\']', line)
-                    if match:
-                        var_name = match.group(1)
-                        if "os.environ" not in var_name: # Safety check
-                            env_var = var_name.upper()
-                            if "PASSWORD" not in env_var:
-                                env_var = f"{env_var}_PASSWORD"
-                            new_line = line.replace(match.group(0), f'{var_name} = os.getenv("{env_var}", "default_secret")')
-                            lines[target_line_idx] = new_line
-                            return "\n".join(lines)
-                    
-                    # 2. os.environ Assignment
-                    match_env = re.search(r'os\.environ\[["\']([^"\']+)["\']\]\s*=\s*["\']([^"\']+)["\']', line)
-                    if match_env:
-                        key_name = match_env.group(1)
-                        # os.environ["KEY"] = os.getenv("KEY")
-                        # This effectively makes it load from env, or crash/be empty if not set? 
-                        # Actually os.environ assignment expects a string. 
-                        # If we do os.environ["KEY"] = os.getenv("KEY"), and getenv returns None, it might fail if strictly typed, but in Python it's dict.
-                        # Wait, os.environ values MUST be strings. os.getenv returns None by default.
-                        # So os.environ["K"] = None will raise TypeError.
-                        # We should use os.getenv("KEY", "") or leave it valid.
-                        # But wait, the USER said: "Autonoma replaced the hardcoded value and added os.getenv".
-                        # The user provided example: 
-                        # os.environ["OPENAI_API_KEY"] = "sk-..." 
-                        # -> 
-                        # os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-                        # This seems to be the desired behavior to remove the secret from code.
-                        # We'll use os.getenv(KEY, "placeholder") to be safe? 
-                        # Or just os.getenv(KEY).
-                        # Let's check typical usage.
-                        new_line = line.replace(match_env.group(0), f'os.environ["{key_name}"] = os.getenv("{key_name}")')
-                        lines[target_line_idx] = new_line
-                        return "\n".join(lines)
-
-            except Exception as e:
-                logger.error(f"Deterministic fix SEC001 failed: {e}")
-
-        if issue_id == "SEC002" and file_path.endswith('.py'):
-            # Fix hardcoded API key -> os.getenv("API_KEY")
-            try:
-                lines = code.splitlines()
-                target_line_idx = -1
+                line_idx = None
                 if isinstance(issue_or_msg, dict) and 'line' in issue_or_msg:
-                    target_line_idx = issue_or_msg['line'] - 1
+                    line_idx = issue_or_msg['line']
                 
-                if target_line_idx >= 0 and target_line_idx < len(lines):
-                    line = lines[target_line_idx]
-                    
-                    # 1. Variable Assignment
-                    match = re.search(r'(\w+)\s*=\s*["\']([^"\']+)["\']', line)
-                    if match:
-                        var_name = match.group(1)
-                        # Ensure we don't double match os.environ if the previous regex was too loose
-                        # \w+ matches "os" but the rest "missing"
-                        # The regex (\w+)\s*=... expects simple variable. "os.environ['...']" won't match \w+ =
-                        
-                        env_var = var_name.upper()
-                        new_line = line.replace(match.group(0), f'{var_name} = os.getenv("{env_var}")')
-                        lines[target_line_idx] = new_line
-                        return "\n".join(lines)
-
-                    # 2. os.environ Assignment
-                    match_env = re.search(r'os\.environ\[["\']([^"\']+)["\']\]\s*=\s*["\']([^"\']+)["\']', line)
-                    if match_env:
-                        key_name = match_env.group(1)
-                        # Replace with os.getenv look up
-                        # We use os.getenv so it pulls from environment at runtime
-                        new_line = line.replace(match_env.group(0), f'os.environ["{key_name}"] = os.getenv("{key_name}")')
-                        lines[target_line_idx] = new_line
-                        return "\n".join(lines)
-                        
+                result = fixer.fix_secret(code, Path(file_path), issue_id, line=line_idx)
+                
+                if result.outcome == "SUCCESS":
+                    return result.fixed_code
+                elif result.outcome == "REFUSED":
+                    logger.debug(f"Refused fix for {issue_id}: {result.reason} ({result.message})")
+                    return code  # Return original code if refused so it doesn't crash CLI
+                else:
+                    logger.error(f"Failed to fix {issue_id}: {result.reason} ({result.message})")
+                    return code
             except Exception as e:
-                logger.error(f"Deterministic fix SEC002 failed: {e}")
+                logger.error(f"Error during SecretFixer delegation for {issue_id}: {e}")
+                return code
 
         # LLM-based fixes are Enterprise Edition only
         logger.info(f"Issue {issue_id or 'unknown'} requires LLM-based fix (Enterprise Edition). "

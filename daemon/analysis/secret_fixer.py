@@ -9,7 +9,6 @@ import logging
 from pathlib import Path
 from typing import Tuple, Optional
 from dataclasses import dataclass
-from .naming_utils import to_env_var
 
 try:
     from .decisions import (
@@ -65,125 +64,58 @@ class SecretFixer:
         self._env_contract_checked = False
         self._has_env_contract = None
     
-    def ensure_env_contract(self, variable_name: str) -> bool:
+    def check_env_contract(self) -> bool:
         """
-        Ensure an env var contract exists.
+        Check if the repo has evidence of env var usage.
         
-        Strategy:
-        1. Check for existing .env, .env.example, .env.template, etc.
-        2. If found -> Success (append to confirm if desired, but we just check presence).
-           Actually, if .env.example exists, we should ensure the key is present.
-        3. If NOT found -> Create .env.example at repo root.
+        Evidence includes:
+        - .env file exists
+        - .env.example file exists
+        - requirements.txt has python-dotenv
+        - package.json has dotenv
+        - Code imports os.getenv / process.env
         """
-        # 1. Determine Repo Root
-        root = self._get_repo_root()
-        if not root:
-            # Fallback to self.repo_path if set, else cwd
-            root = self.repo_path if self.repo_path else Path.cwd()
-            
-        # 2. Check for existing contract files
-        env_files = ['.env', '.env.example', '.env.sample', '.env.template', '.env.local']
-        existing_contract_file = None
-        for fname in env_files:
-            f = root / fname
-            if f.exists():
-                existing_contract_file = f
-                # If we found .env.example or template, prefer modifying that one
-                if 'example' in fname or 'template' in fname or 'sample' in fname:
-                    break
+        if self._env_contract_checked:
+            return self._has_env_contract
         
-        # 3. If no contract, create .env.example
-        target_file = existing_contract_file
-        if not target_file:
-            target_file = root / '.env.example'
-            try:
-                if not target_file.exists():
-                    target_file.write_text("# Autonoma - Environment Variables\n", encoding='utf-8')
-                    logger.info(f"Created {target_file.name}")
-            except Exception as e:
-                logger.error(f"Failed to create .env.example: {e}")
-                return False
-                
-        # 4. Ensure variable exists in target file (Idempotency)
-        # We only modify if it's a template file (example/sample/template) or if we just created it.
-        # We generally AVOID touching actual .env files to avoid deleting/corrupting secrets, 
-        # but the user said "Accept if any exist... If none exist -> create .env.example".
-        # And "Append only if ... not already present".
+        self._env_contract_checked = True
+        self._has_env_contract = False
         
-        # Refined rule: ALWAYS update .env.example (creating if needed).
-        # Ignore .env for writing (it's for values).
-        
-        example_file = root / '.env.example'
-        if not example_file.exists():
-             # Try other names?
-             for fname in ['.env.template', '.env.sample']:
-                 if (root / fname).exists():
-                     example_file = root / fname
-                     break
-        
-        # If still doesn't exist (e.g. we only found .env), create .env.example?
-        # User said: "If none exist -> create .env.example".
-        # If .env exists, we ACCEPT the contract.
-        # But we should still document the new var in .env.example if possible.
-        
-        # Let's stick to safe path: ensure .env.example exists and has the var.
-        if not example_file.exists():
-             example_file = root / '.env.example'
-             try:
-                 example_file.write_text("# Autonoma - Environment Variables\n", encoding='utf-8')
-             except Exception:
-                 return False # Write fail
-        
-        return self._append_to_env_file(example_file, variable_name)
-
-    def _get_repo_root(self) -> Optional[Path]:
-        """Try to find git root."""
-        try:
-            import subprocess
-            # Use cwd=self.repo_path if matched, else cwd
-            cwd = self.repo_path if self.repo_path and self.repo_path.exists() else Path.cwd()
-            
-            result = subprocess.run(
-                ['git', 'rev-parse', '--show-toplevel'], 
-                capture_output=True, 
-                text=True, 
-                cwd=cwd,
-                check=True
-            )
-            val = result.stdout.strip()
-            if val:
-                return Path(val)
-        except Exception:
-            pass
-        return None
-
-    def _append_to_env_file(self, file_path: Path, var_name: str) -> bool:
-        """Append variable to env file if not present (Idempotent)."""
-        try:
-            content = file_path.read_text(encoding='utf-8')
-            
-            # Check for var_name= (at start of line)
-            # Regex handles: ^VAR_NAME= or ^export VAR_NAME=
-            pattern = re.compile(rf'^\s*(?:export\s+)?{re.escape(var_name)}\s*=', re.MULTILINE)
-            
-            if pattern.search(content):
-                return True # Already exists
-            
-            # Append properly
-            suffix = ""
-            if content and not content.endswith('\n'):
-                suffix = "\n"
-                
-            new_entry = f"{suffix}{var_name}=\n"
-            
-            # Atomic-ish write not strictly needed for local tool, but append mode is safe
-            with open(file_path, "a", encoding='utf-8') as f:
-                f.write(new_entry)
-                
-            return True
-        except Exception as e:
-            logger.error(f"Failed to append to {file_path}: {e}")
+        if not self.repo_path or not self.repo_path.exists():
+            # Can't check, assume no contract - will refuse
             return False
+        
+        try:
+            # Check for .env files
+            env_files = ['.env', '.env.example', '.env.sample', '.env.local']
+            for env_file in env_files:
+                if (self.repo_path / env_file).exists():
+                    self._has_env_contract = True
+                    logger.debug(f"Env contract found: {env_file}")
+                    return True
+            
+            # Check for python-dotenv in requirements
+            req_file = self.repo_path / 'requirements.txt'
+            if req_file.exists():
+                content = req_file.read_text(encoding='utf-8', errors='ignore')
+                if 'python-dotenv' in content or 'dotenv' in content:
+                    self._has_env_contract = True
+                    logger.debug("Env contract found: python-dotenv in requirements.txt")
+                    return True
+            
+            # Check for dotenv in package.json
+            pkg_file = self.repo_path / 'package.json'
+            if pkg_file.exists():
+                content = pkg_file.read_text(encoding='utf-8', errors='ignore')
+                if 'dotenv' in content:
+                    self._has_env_contract = True
+                    logger.debug("Env contract found: dotenv in package.json")
+                    return True
+                    
+        except Exception as e:
+            logger.debug(f"Error checking env contract: {e}")
+        
+        return False
     
     def fix_secret(self, code: str, file_path: Path, 
                    issue_id: str, line: int = None) -> SecretFixResult:
@@ -195,8 +127,7 @@ class SecretFixer:
         # Pre-flight checks
         
         # Check 1: Is fix type supported?
-        # Update IDs to SECK namespace
-        if issue_id not in ["SECK001", "SECK002", "SEC001", "SEC002", "SECK003_WARN"]: # Support both for backward compat for now
+        if issue_id not in ["SEC001", "SEC002"]:
             return SecretFixResult(
                 outcome="REFUSED",
                 reason="issue_type_not_supported",
@@ -220,34 +151,21 @@ class SecretFixer:
             )
         
         # Check 3: Is there an env var contract?
-        # MOVED: We now ensure contract lazily inside specific fix methods
-        # to ensure we have the variable name to document.
-        # if not self.check_env_contract(): ...
-            
-        # Check 4: Is file in sensitive context (test/docs)? (Landmine #6)
-            
-        # Check 4: Is file in sensitive context (test/docs)? (Landmine #6)
-        if self._is_sensitive_context(file_path):
+        # This is the KEY check that prevents "shifting the problem"
+        if not self.check_env_contract():
             return SecretFixResult(
                 outcome="REFUSED",
-                reason="sensitive_context",
-                message=f"Refusing to auto-fix secret in test/doc file: {file_path.name}"
+                reason="env_var_contract_not_found",
+                message="No .env file or dotenv dependency found. "
+                        "Create a .env.example file first to establish env var contract."
             )
-
-        # Check 4: Is file in sensitive context (test/docs)? (Landmine #6)
-        if self._is_sensitive_context(file_path):
-            return SecretFixResult(
-                outcome="REFUSED",
-                reason="sensitive_context",
-                message=f"Refusing to auto-fix secret in test/doc file: {file_path.name}"
-            )
-
+        
         # Apply the fix
         try:
-            if issue_id in ["SECK001", "SEC001"]:
-                return self._fix_password(code, file_path)
-            elif issue_id in ["SECK002", "SEC002", "SECK003_WARN"]:
-                return self._fix_api_key(code, file_path)
+            if issue_id == "SEC001":
+                return self._fix_password(code, file_path, target_line_idx=line)
+            elif issue_id == "SEC002":
+                return self._fix_api_key(code, file_path, target_line_idx=line)
         except Exception as e:
             return SecretFixResult(
                 outcome="FAILED",
@@ -261,51 +179,7 @@ class SecretFixer:
             message="No matching patterns found"
         )
     
-    def _fix_password(self, code: str, file_path: Path) -> SecretFixResult:
-        """Fix SECK001: Hardcoded password."""
-        # ... (Same logic, pattern matching doesn't depend on ID)
-        return self._fix_password_impl(code, file_path) # Wait, logic is inline.
-        # I'll keep the logic inline below but just wrapped in existing methods.
-        # Since I'm using replace_file_content, I am replacing the block above.
-        pass
-
-    # ... (skipping inline logic for brevity in this thought trace, 
-    # but I need to make sure I don't delete the methods. 
-    # The replace block targets lines 172-182 approximately for the dispatch logic.
-    # And then the _is_sensitive_context at the end.)
-
-    # Wait, the tool requires me to replace contiguous block.
-    # I should target the dispatch logic first.
-
-    def _is_sensitive_context(self, file_path: Path) -> bool:
-        """Check if file is in a context where auto-fix is dangerous."""
-        if not file_path: return False
-        
-        try:
-            parts = set(p.lower() for p in file_path.parts)
-            
-            # Segment Check
-            risky_segments = {'tests', 'test', 'docs', 'examples', 'fixtures', 'spec', '__tests__', 'mock'}
-            if not parts.isdisjoint(risky_segments):
-                return True
-                
-            # Filename Logic
-            name = file_path.name.lower()
-            if (name.startswith("test_") or 
-                name.endswith("_test.py") or 
-                name.endswith(".test.js") or 
-                name.endswith(".spec.js") or 
-                name.startswith("mock_")):
-                return True
-        except Exception:
-            # Fallback
-            path_str = str(file_path).lower()
-            if any(x in path_str for x in ["/test/", "/docs/", "/examples/"]):
-                return True
-            
-        return False
-    
-    def _fix_password(self, code: str, file_path: Path) -> SecretFixResult:
+    def _fix_password(self, code: str, file_path: Path, target_line_idx: Optional[int] = None) -> SecretFixResult:
         """Fix SEC001: Hardcoded password."""
         modified_code = code
         env_var_name = None
@@ -315,12 +189,6 @@ class SecretFixer:
             
             match = re.search(pattern, code)
             if not match:
-                if "os.getenv" in code:
-                    return SecretFixResult(
-                        outcome="SKIPPED",
-                        reason="already_fixed",
-                        message="already uses env var"
-                    )
                 return SecretFixResult(
                     outcome="REFUSED",
                     reason="secret_pattern_ambiguous",
@@ -337,14 +205,6 @@ class SecretFixer:
                     message=f"Cannot determine safe env var name for '{var_name}'"
                 )
             
-            # Ensure Contract (Create .env.example if needed)
-            if not self.ensure_env_contract(env_var_name):
-                return SecretFixResult(
-                     outcome="FAILED",
-                     reason="env_contract_creation_failed",
-                     message="Could not create/update .env.example"
-                )
-
             # Ensure import os
             if "import os" not in code:
                 lines = modified_code.splitlines()
@@ -356,12 +216,7 @@ class SecretFixer:
                 vn = m.group(1)
                 th = m.group(2) if m.group(2) else ""
                 op = m.group(3)
-                
-                # Deterministic Naming
-                env_name = to_env_var(vn)
-                self.ensure_env_contract(env_name)
-                
-                return f"{vn}{th} {op} os.getenv('{env_name}')"
+                return f"{vn}{th} {op} os.getenv('{env_var_name}')"
             
             modified_code = re.sub(pattern, replacer, modified_code)
             
@@ -370,12 +225,6 @@ class SecretFixer:
             
             match = re.search(pattern, code)
             if not match:
-                if "process.env" in code:
-                    return SecretFixResult(
-                        outcome="SKIPPED",
-                        reason="already_fixed",
-                        message="already uses env var"
-                    )
                 return SecretFixResult(
                     outcome="REFUSED",
                     reason="secret_pattern_ambiguous",
@@ -390,14 +239,6 @@ class SecretFixer:
                     outcome="REFUSED",
                     reason="env_var_name_ambiguous",
                     message=f"Cannot determine safe env var name for '{var_name}'"
-                )
-            
-            # Ensure Contract (Create .env.example if needed)
-            if not self.ensure_env_contract(env_var_name):
-                return SecretFixResult(
-                     outcome="FAILED",
-                     reason="env_contract_creation_failed",
-                     message="Could not create/update .env.example"
                 )
             
             def replacer_js(m):
@@ -423,120 +264,90 @@ class SecretFixer:
             message="Pattern matched but no changes made"
         )
     
-    def _fix_api_key(self, code: str, file_path: Path) -> SecretFixResult:
+    def _fix_api_key(self, code: str, file_path: Path, target_line_idx: Optional[int] = None) -> SecretFixResult:
         """Fix SEC002: Hardcoded API key."""
         modified_code = code
         env_var_name = None
         
-        if file_path.suffix == ".py":
-            pattern = r"(?m)(^\s*)([\w_]*(?:api_key|api_secret|auth_token|secret|token|key)[\w_]*)\s*=\s*['\"]([^'\"]{10,})['\"]"
-            
-            match = re.search(pattern, code)
-            if not match:
-                # User Feedback: If we can't find the literal pattern, but the file uses os.getenv,
-                # it's likely already fixed by a previous pass.
-                if "os.getenv" in code:
-                    return SecretFixResult(
-                        outcome="SKIPPED", # Mapped to SKIPPED in CLI
-                        reason="already_fixed",
-                        message="already uses env var"
-                    )
-                return SecretFixResult(
-                    outcome="REFUSED",
-                    reason="secret_pattern_ambiguous",
-                    message="Could not locate API key pattern to fix"
-                )
-            
-            var_name = match.group(2)
-            env_var_name = self._get_env_var_name(var_name.lower())
-            
-            if not env_var_name:
-                return SecretFixResult(
-                    outcome="REFUSED",
-                    reason="env_var_name_ambiguous",
-                    message=f"Cannot determine safe env var name for '{var_name}'"
-                )
-            
-            # Ensure Contract (Create .env.example if needed)
-            if not self.ensure_env_contract(env_var_name):
-                return SecretFixResult(
-                     outcome="FAILED",
-                     reason="env_contract_creation_failed",
-                     message="Could not create/update .env.example"
-                )
-            
-            # Ensure import os
-            if "import os" not in code:
-                lines = modified_code.splitlines()
-                lines.insert(0, "import os")
-                modified_code = "\n".join(lines)
-            
-            def replacer(m):
-                indent = m.group(1)
-                vn = m.group(2)
-                
-                # Dynamic deterministic naming using new util
-                name_for_match = to_env_var(vn)
-                if not name_for_match:
-                     name_for_match = vn.upper()
-                
-                # Ensure validation (idempotent)
-                self.ensure_env_contract(name_for_match)
-                
-                return f"{indent}{vn} = os.getenv('{name_for_match}')"
-            
-            modified_code = re.sub(pattern, replacer, modified_code)
-            
-        elif file_path.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            pattern = r"(?m)(^\s*)(const|let|var)?\s*(apiKey|apiSecret|authToken)\s*=\s*['\"]([^'\"]{10,})['\"]"
-            
-            match = re.search(pattern, code)
-            if not match:
-                if "process.env" in code:
-                    return SecretFixResult(
-                        outcome="SKIPPED",
-                        reason="already_fixed",
-                        message="already uses env var"
-                    )
-                return SecretFixResult(
-                    outcome="REFUSED",
-                    reason="secret_pattern_ambiguous",
-                    message="Could not locate API key pattern to fix"
-                )
-            
-            var_name = match.group(3)
-            # Convert camelCase to SCREAMING_SNAKE_CASE
-            env_var_name = re.sub(r'(?<!^)(?=[A-Z])', '_', var_name).upper()
-            
-            # Ensure Contract (Create .env.example if needed)
-            if not self.ensure_env_contract(env_var_name):
-                return SecretFixResult(
-                     outcome="FAILED",
-                     reason="env_contract_creation_failed",
-                     message="Could not create/update .env.example"
-                )
-            
-            def replacer_js(m):
-                indent = m.group(1)
-                decl = m.group(2) or ""
-                vn = m.group(3)
-                decl_str = f"{decl} " if decl else ""
-                return f"{indent}{decl_str}{vn} = process.env.{env_var_name}"
-            
-            modified_code = re.sub(pattern, replacer_js, modified_code)
+        lines = code.splitlines()
         
-        if modified_code != code:
+        # If line is provided, restrict to that line
+        process_lines = [(target_line_idx - 1, lines[target_line_idx - 1])] if target_line_idx and target_line_idx <= len(lines) else enumerate(lines)
+        
+        changes_made = False
+        
+        for idx, line in process_lines:
+            # Check if this line already uses env var access to prevent duplication / crash loops
+            if any(safe_p in line for safe_p in ['os.getenv', 'process.env']):
+                continue
+                
+            if file_path.suffix == ".py":
+                # Match 1: Variable assignment (e.g. api_key = "secret", openai_api_key = "secret")
+                pattern1 = r"(?m)(^\s*)(\w*key\w*|\w*token\w*|\w*secret\w*)\s*=\s*['\"]([^'\"]{10,})['\"]"
+                match1 = re.search(pattern1, line, re.IGNORECASE)
+                
+                # Match 2: os.environ assignment (e.g. os.environ["API_KEY"] = "secret")
+                pattern2 = r"(?m)(^\s*)os\.environ\[['\"]([^'\"]+)['\"]\]\s*=\s*['\"]([^'\"]{10,})['\"]"
+                match2 = re.search(pattern2, line)
+                
+                if match1:
+                    indent, var_name, _ = match1.group(1), match1.group(2), match1.group(3)
+                    env_var_name = self._get_env_var_name(var_name.lower())
+                    if env_var_name:
+                        new_line = line.replace(match1.group(0), f"{indent}{var_name} = os.getenv('{env_var_name}')")
+                        lines[idx] = new_line
+                        changes_made = True
+                
+                elif match2:
+                    indent, key_name, _ = match2.group(1), match2.group(2), match2.group(3)
+                    env_var_name = key_name.upper()
+                    new_line = line.replace(match2.group(0), f"{indent}os.environ['{key_name}'] = os.getenv('{env_var_name}')")
+                    lines[idx] = new_line
+                    changes_made = True
+                
+            elif file_path.suffix in {".js", ".ts", ".jsx", ".tsx"}:
+                pattern = r"(?m)(^\s*)(const|let|var)?\s*(\w*key\w*|\w*token\w*|\w*secret\w*)\s*=\s*['\"]([^'\"]{10,})['\"]"
+                match = re.search(pattern, line, re.IGNORECASE)
+                
+                if match:
+                    indent = match.group(1)
+                    decl = match.group(2) or ""
+                    var_name = match.group(3)
+                    decl_str = f"{decl} " if decl else ""
+                    
+                    env_var_name = re.sub(r'(?<!^)(?=[A-Z])', '_', var_name).upper()
+                    if env_var_name:
+                        new_line = line.replace(match.group(0), f"{indent}{decl_str}{var_name} = process.env.{env_var_name}")
+                        lines[idx] = new_line
+                        changes_made = True
+
+        if not changes_made:
+            if target_line_idx and target_line_idx <= len(lines):
+                 if any(safe_p in lines[target_line_idx - 1] for safe_p in ['os.getenv', 'process.env']):
+                     return SecretFixResult(
+                         outcome="REFUSED",
+                         reason="already_fixed",
+                         message=f"Line {target_line_idx} already uses environment variable lookup"
+                     )
             return SecretFixResult(
-                outcome="SUCCESS",
-                fixed_code=modified_code,
-                env_var_name=env_var_name,
-                message=f"Replaced hardcoded key with env var '{env_var_name}'"
+                outcome="REFUSED",
+                reason="secret_pattern_ambiguous",
+                message="Could not locate API key pattern to fix or determine safe env var name"
             )
+
+        # Ensure import os if needed
+        if file_path.suffix == ".py" and changes_made:
+            has_import = any("import os" in l for l in lines)
+            if not has_import:
+                lines.insert(0, "import os")
+                
+        modified_code = "\n".join(lines)
         
         return SecretFixResult(
-            outcome="REFUSED",
-            reason="no_fix_applied",
-            message="Pattern matched but no changes made"
+            outcome="SUCCESS",
+            fixed_code=modified_code,
+            env_var_name=env_var_name or "UNKNOWN",
+            message=f"Replaced hardcoded key with env var '{env_var_name or 'UNKNOWN'}'"
         )
     
     def _get_env_var_name(self, var_name: str) -> Optional[str]:
@@ -545,42 +356,14 @@ class SecretFixer:
         Returns None if we can't confidently name it.
         """
         var_lower = var_name.lower().replace('-', '_')
+
         
-        # Direct match
+        if re.match(r'^[a-z][a-z0-9_]*$', var_lower) and len(var_lower) > 6:
+            return var_lower.upper()
+
+        # Fall back to generic pattern matching for short/ambiguous names
         for pattern, env_name in self.ENV_VAR_PATTERNS.items():
             if pattern in var_lower:
                 return env_name
-        
-        # If it's a clear identifier, uppercase it
-        if re.match(r'^[a-z][a-z0-9_]*$', var_lower):
-            return var_lower.upper()
-        
+
         return None
-        
-    def _is_sensitive_context(self, file_path: Path) -> bool:
-        """Check if file is in a context where auto-fix is dangerous."""
-        if not file_path: return False
-        
-        try:
-            parts = set(p.lower() for p in file_path.parts)
-            
-            # Segment Check
-            risky_segments = {'tests', 'test', 'docs', 'examples', 'fixtures', 'spec', '__tests__', 'mock'}
-            if not parts.isdisjoint(risky_segments):
-                return True
-                
-            # Filename Logic
-            name = file_path.name.lower()
-            if (name.startswith("test_") or 
-                name.endswith("_test.py") or 
-                name.endswith(".test.js") or 
-                name.endswith(".spec.js") or 
-                name.startswith("mock_")):
-                return True
-        except Exception:
-            # Fallback
-            path_str = str(file_path).lower()
-            if any(x in path_str for x in ["/test/", "/docs/", "/examples/"]):
-                return True
-            
-        return False

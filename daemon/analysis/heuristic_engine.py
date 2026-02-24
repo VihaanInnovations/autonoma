@@ -148,9 +148,9 @@ class HeuristicEngine:
                 "type": "runtime_error",
                 "hint": "ValueError: Impossible to convert string '{0}' to integer. Ensure the string contains only digits."
             },
-            # Rule 22: SQLI001 (SQL Injection)
+            # Rule 22: SEC002 (SQL Injection)
             {
-                "pattern": r"SQLI001",
+                "pattern": r"SEC002",
                 "type": "security_fix",
                 "hint": "SECURITY FIX: Potential SQL Injection detected. 1. Use parameterized queries (e.g., `cursor.execute('SELECT * FROM users WHERE name = ?', (name,))`). 2. NEVER strictly concatenate strings into SQL queries."
             },

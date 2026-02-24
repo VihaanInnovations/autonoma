@@ -97,10 +97,9 @@ async def _run_analysis(path_str: str, project_id: str, fmt: str, fail_on_high: 
             if verbose and fmt == 'text':
                 severity = issue.get('severity', 'UNKNOWN')
                 rule_id = issue.get('id', 'UNKNOWN')
-                msg = issue.get('message', issue.get('description', ''))
                 line = issue.get('line', '?')
-                # User requested specific format: FOUND {ID} {Severity} {file:line} {One-line reason}
-                click.echo(f"    FOUND: {rule_id} ({severity}) {str(file_path.relative_to(base_path))}:{line} {msg}")
+                msg = issue.get('message', issue.get('description', ''))
+                click.echo(f"    [{severity}] {rule_id} (line {line}): {msg}")
 
     # Output results
     if fmt == 'json':
@@ -117,7 +116,7 @@ async def _run_analysis(path_str: str, project_id: str, fmt: str, fail_on_high: 
     # Auto-fix
     if auto_fix and all_issues:
         click.echo("\n=== Auto-Fix ===")
-        engine = FixEngine()
+        engine = FixEngine(repo_path=base_path)
         for issue in all_issues:
             severity = issue.get('severity')
             click.echo(f"[DEBUG] Processing {issue.get('id')} with severity {severity}")
@@ -128,17 +127,14 @@ async def _run_analysis(path_str: str, project_id: str, fmt: str, fail_on_high: 
                 click.echo(f"[DEBUG] Generating fix for {issue.get('id')} in {file_path}")
                 
                 try:
-                    fixed, msg = await engine.generate_fix(code, issue)
-                    if not fixed and msg.startswith("REFUSED"):
-                        # Distinct output for refusal
-                        click.echo(f"  REFUSED: {issue.get('file')} - {msg.replace('REFUSED: ', '')}")
-                    elif fixed and fixed != code:
+                    fixed = await engine.generate_fix(code, issue)
+                    if fixed and fixed != code:
                         file_path.write_text(fixed, encoding='utf-8')
-                        click.echo(f"  FIXED:   {issue.get('file')} ({msg})")
+                        click.echo(f"  Fixed: {issue.get('file')}")
                     else:
-                        click.echo(f"  SKIPPED: {issue.get('file')} - {msg}")
+                        click.echo(f"[DEBUG] Fix generation returned same code or None")
                 except Exception as e:
-                    click.echo(f"  FAILED:  {issue.get('file')} - {e}")
+                    click.echo(f"[DEBUG] Fix generation failed: {e}")
 
     # Exit code
     if fail_on_high and high_count > 0:
