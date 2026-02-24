@@ -1,6 +1,6 @@
 # Autonoma
 
-    "Unlike LLM-based fixers, Autonoma doesn't guess. Every fix is AST-based and deterministic. If it can't guarantee the replacement is safe, it refuses. That's by design."
+"Unlike LLM-based fixers, Autonoma doesn't guess. Every fix is AST-based and deterministic. If it can't guarantee the replacement is safe, it refuses. That's by design."
 
 **Deterministic secret remediation with strict safety boundaries.**
 
