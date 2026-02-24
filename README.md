@@ -1,8 +1,11 @@
 # Autonoma
 
+    "Unlike LLM-based fixers, Autonoma doesn't guess. Every fix is AST-based and deterministic. If it can't guarantee the replacement is safe, it refuses. That's by design."
+
 **Deterministic secret remediation with strict safety boundaries.**
 
 Autonoma is a local-first code security tool that deterministically fixes hardcoded secrets and deliberately refuses unsafe modifications.
+
 
 ## Community Edition
 
@@ -15,18 +18,40 @@ Autonoma is a local-first code security tool that deterministically fixes hardco
 - Refuses complex security fixes by design
 - Runs fully locally. No telemetry. No cloud dependency.
 
+Community Edition is free for individuals and teams. No usage limits. No account required.
+
 ## Example
 
 ### Before
 ```python
-password = "supersecret123"
-api_key = "sk-live-abc123xyz"
+# settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'prod_db',
+        'USER': 'admin',
+        'PASSWORD': 'Pr0d@ccess2024!',       # SEC001 — hardcoded password
+        'HOST': 'db.internal.company.com',
+    }
+}
+
+SENDGRID_API_KEY = "SG.live-abc123xyz987_realkey"  # SEC002 — hardcoded API key
 ```
 
 ### After
 ```python
-password = os.getenv("PASSWORD")
-api_key = os.getenv("API_KEY")
+# settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'prod_db',
+        'USER': 'admin',
+        'PASSWORD': os.getenv("PASSWORD"),      # FIXED
+        'HOST': 'db.internal.company.com',
+    }
+}
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")   # FIXED
 ```
 
 ## Safety Model
@@ -47,6 +72,7 @@ Autonoma applies deterministic fixes only when:
 | FAILED | Tool error (reportable bug) |
 
 **Refusal is intentional — not a failure.**
+When Autonoma cannot guarantee a structurally safe replacement — for example, when a secret is used across multiple scopes or inside a dynamic expression — it refuses rather than guessing. A wrong fix is worse than no fix.
 
 ## CLI Usage
 
@@ -78,7 +104,7 @@ Enterprise adds:
 - CI/CD integration
 - Role-based access control
 
-Contact: visuvalingamvithushan@gmail.com
+Contact for pricing: visuvalingamvithushan@gmail.com
 
 ## License
 
