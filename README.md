@@ -77,7 +77,7 @@ When Autonoma cannot guarantee a structurally safe replacement — for example, 
 ## CLI Usage
 
 ```bash
-python -m daemon.cli analyze ./repo --auto-fix
+python -m daemon.cli analyze ./repo --auto-fix --verbose
 ```
 
 CLI is the primary supported interface.

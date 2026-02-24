@@ -208,6 +208,9 @@ fi
 
 echo ""
 
+# Return to root directory
+cd .. || true
+
 # Summary
 echo "========================================"
 echo "Installation Complete!"

@@ -208,6 +208,9 @@ if (Get-Command code -ErrorAction SilentlyContinue) {
 
 Write-Host ""
 
+# Return to root directory
+cd ..
+
 # Summary
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Installation Complete!" -ForegroundColor Green
