@@ -1,10 +1,22 @@
 # Autonoma
 
-"Unlike LLM-based fixers, Autonoma doesn't guess. Every fix is AST-based and deterministic. If it can't guarantee the replacement is safe, it refuses. That's by design."
+"Most secret scanners find the problem and leave fixing to you. Autonoma fixes it — but only when it can guarantee the fix is safe. If it can't, it refuses. That's by design."
 
 **Deterministic secret remediation with strict safety boundaries.**
 
 Autonoma is a local-first code security tool that deterministically fixes hardcoded secrets and deliberately refuses unsafe modifications.
+
+
+## Real World Test
+
+Searched GitHub for exposed secrets using `api_key = "sk-" 
+language:Python`. Found a real public repo with live exposed 
+Azure Vision and OpenAI API keys. Cloned it. Ran Autonoma.
+
+Fixed both secrets cleanly. Refused the edge case where two 
+patterns overlapped. Nothing else in the codebase was touched.
+
+[Watch the full demo →](your YouTube link here)
 
 
 ## Community Edition
