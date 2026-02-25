@@ -16,7 +16,7 @@ Azure Vision and OpenAI API keys. Cloned it. Ran Autonoma.
 Fixed both secrets cleanly. Refused the edge case where two 
 patterns overlapped. Nothing else in the codebase was touched.
 
-[Watch the full demo →](your YouTube link here)
+https://www.youtube.com/watch?v=H3CyXHh6GzQ
 
 
 ## Community Edition
