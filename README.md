@@ -16,7 +16,7 @@ Azure Vision and OpenAI API keys. Cloned it. Ran Autonoma.
 Fixed both secrets cleanly. Refused the edge case where two 
 patterns overlapped. Nothing else in the codebase was touched.
 
-https://www.youtube.com/watch?v=H3CyXHh6GzQ
+[Watch the full demo →](https://www.youtube.com/watch?v=H3CyXHh6GzQ)
 
 
 ## Community Edition
@@ -77,7 +77,7 @@ Autonoma applies deterministic fixes only when:
 ### Outcomes:
 
 | Status | Meaning |
-| :--- | :--- |
+|--------|--------|
 | FIXED | Deterministic fix applied |
 | REFUSED | Modification intentionally declined |
 | SKIPPED | Already compliant |
