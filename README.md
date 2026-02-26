@@ -86,10 +86,32 @@ Autonoma applies deterministic fixes only when:
 **Refusal is intentional — not a failure.**
 When Autonoma cannot guarantee a structurally safe replacement — for example, when a secret is used across multiple scopes or inside a dynamic expression — it refuses rather than guessing. A wrong fix is worse than no fix.
 
-## CLI Usage
-
 ```bash
-python -m daemon.cli analyze ./repo --auto-fix --verbose
+## Quick Start
+
+# 1. Clone the repo
+git clone https://github.com/VihaanInnovations/autonoma
+cd autonoma
+
+# 2. Install dependencies
+# Windows:
+./install.ps1
+
+# Linux/macOS:
+./install.sh
+
+# 3. Start the daemon
+# Windows:
+./run.ps1
+
+# Linux/macOS:
+./run.sh
+
+# 4. In a new terminal, run on your repo
+python -m daemon.cli analyze ./your-repo --auto-fix --verbose
+
+# Note: The daemon must be running in one terminal 
+# before you use the CLI in another.
 ```
 
 CLI is the primary supported interface.
