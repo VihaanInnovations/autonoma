@@ -19,7 +19,7 @@ def main():
     """Main application function."""
     
     # SECURITY ISSUE: Hardcoded password
-    admin_password = os.getenv('ADMIN_PASSWORD')  # SEC001: Hardcoded password
+    admin_password = "admin123"  # SEC001: Hardcoded password
     
     # Initialize service
     service = UserService()

@@ -39,18 +39,3 @@ This project intentionally contains various code issues that the Hybrid Reviewer
 3. Check the Problems panel to see detected issues
 4. Use Command Palette: "Hybrid Reviewer: Analyze File" for manual analysis
 
-## Resetting for Video Recording
-
-To reset all files to their original "Buggy" state (for multiple takes):
-
-```bash
-# From the project root
-python reset_demo_project.py
-```
-
-This will restore:
-- `credentials.py`: Hardcoded password & API key
-- `user_service.py`: Print statements & Hardcoded secrets
-- `data_handler.js`: Infinite loop & Hardcoded secrets
-
-
