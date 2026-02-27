@@ -6,6 +6,7 @@ Uses explicit refusal semantics.
 """
 import re
 import logging
+import os
 from pathlib import Path
 from typing import Tuple, Optional
 from dataclasses import dataclass
@@ -111,6 +112,26 @@ class SecretFixer:
                     self._has_env_contract = True
                     logger.debug("Env contract found: dotenv in package.json")
                     return True
+            
+            # Check for env var usage in the code (os.getenv, process.env, etc.)
+            for root, _, files in os.walk(self.repo_path):
+                # Skip common directories
+                if any(skip in root for skip in ['.git', '__pycache__', 'node_modules', 'venv', '.venv']):
+                    continue
+                    
+                for file in files:
+                    if file.endswith(('.py', '.js', '.ts', '.jsx', '.tsx')):
+                        try:
+                            file_path = Path(root) / file
+                            # Only scan small files or first 100 lines to keep it fast
+                            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                head = "".join([f.readline() for _ in range(100)])
+                                if 'os.getenv' in head or 'process.env' in head or 'os.environ' in head:
+                                    self._has_env_contract = True
+                                    logger.debug(f"Env contract found: usage in {file}")
+                                    return True
+                        except Exception:
+                            continue
                     
         except Exception as e:
             logger.debug(f"Error checking env contract: {e}")
@@ -185,7 +206,8 @@ class SecretFixer:
         env_var_name = None
         
         if file_path.suffix == ".py":
-            pattern = r"(\w*[Pp]assword\w*)(\s*:\s*[^=\n]+)?\s*(=)\s*['\"]([^'\"]+)['\"]"
+            # Pattern supports self/cls prefixes for attribute assignments
+            pattern = r"((?:self\.|cls\.)?\w*[Pp]assword\w*)(\s*:\s*[^=\n]+)?\s*(=)\s*['\"]([^'\"]+)['\"]"
             
             match = re.search(pattern, code)
             if not match:
@@ -195,7 +217,9 @@ class SecretFixer:
                     message="Could not locate password pattern to fix"
                 )
             
-            var_name = match.group(1)
+            full_var_name = match.group(1)
+            # Get base variable name (e.g., self.admin_password -> admin_password)
+            var_name = full_var_name.split('.')[-1]
             env_var_name = self._get_env_var_name(var_name.lower())
             
             if not env_var_name:
@@ -221,7 +245,8 @@ class SecretFixer:
             modified_code = re.sub(pattern, replacer, modified_code)
             
         elif file_path.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            pattern = r"(?m)(^\s*)(const|let|var)?\s*(\w*[Pp]assword\w*)\s*=\s*['\"]([^'\"]+)['\"]"
+            # Pattern supports this prefix for property assignments
+            pattern = r"(?m)(^\s*)(const|let|var)?\s*((?:this\.)?\w*[Pp]assword\w*)\s*=\s*['\"]([^'\"]+)['\"]"
             
             match = re.search(pattern, code)
             if not match:
@@ -231,7 +256,8 @@ class SecretFixer:
                     message="Could not locate password pattern to fix"
                 )
             
-            var_name = match.group(3)
+            full_var_name = match.group(3)
+            var_name = full_var_name.split('.')[-1]
             env_var_name = self._get_env_var_name(var_name.lower())
             
             if not env_var_name:
@@ -282,8 +308,8 @@ class SecretFixer:
                 continue
                 
             if file_path.suffix == ".py":
-                # Match 1: Variable assignment (e.g. api_key = "secret", openai_api_key = "secret")
-                pattern1 = r"(?m)(^\s*)(\w*key\w*|\w*token\w*|\w*secret\w*)\s*=\s*['\"]([^'\"]{10,})['\"]"
+                # Match variable assignment (includes self/cls)
+                pattern1 = r"(?m)(^\s*)((?:self\.|cls\.)?\w*key\w*|(?:self\.|cls\.)?\w*token\w*|(?:self\.|cls\.)?\w*secret\w*)\s*=\s*['\"]([^'\"]{10,})['\"]"
                 match1 = re.search(pattern1, line, re.IGNORECASE)
                 
                 # Match 2: os.environ assignment (e.g. os.environ["API_KEY"] = "secret")
@@ -291,10 +317,11 @@ class SecretFixer:
                 match2 = re.search(pattern2, line)
                 
                 if match1:
-                    indent, var_name, _ = match1.group(1), match1.group(2), match1.group(3)
+                    indent, full_var_name, _ = match1.group(1), match1.group(2), match1.group(3)
+                    var_name = full_var_name.split('.')[-1]
                     env_var_name = self._get_env_var_name(var_name.lower())
                     if env_var_name:
-                        new_line = line.replace(match1.group(0), f"{indent}{var_name} = os.getenv('{env_var_name}')")
+                        new_line = line.replace(match1.group(0), f"{indent}{full_var_name} = os.getenv('{env_var_name}')")
                         lines[idx] = new_line
                         changes_made = True
                 
@@ -306,18 +333,20 @@ class SecretFixer:
                     changes_made = True
                 
             elif file_path.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-                pattern = r"(?m)(^\s*)(const|let|var)?\s*(\w*key\w*|\w*token\w*|\w*secret\w*)\s*=\s*['\"]([^'\"]{10,})['\"]"
+                # Match variable assignment (includes this)
+                pattern = r"(?m)(^\s*)(const|let|var)?\s*((?:this\.)?\w*key\w*|(?:this\.)?\w*token\w*|(?:this\.)?\w*secret\w*)\s*=\s*['\"]([^'\"]{10,})['\"]"
                 match = re.search(pattern, line, re.IGNORECASE)
                 
                 if match:
                     indent = match.group(1)
                     decl = match.group(2) or ""
-                    var_name = match.group(3)
+                    full_var_name = match.group(3)
                     decl_str = f"{decl} " if decl else ""
                     
+                    var_name = full_var_name.split('.')[-1]
                     env_var_name = re.sub(r'(?<!^)(?=[A-Z])', '_', var_name).upper()
                     if env_var_name:
-                        new_line = line.replace(match.group(0), f"{indent}{decl_str}{var_name} = process.env.{env_var_name}")
+                        new_line = line.replace(match.group(0), f"{indent}{decl_str}{full_var_name} = process.env.{env_var_name}")
                         lines[idx] = new_line
                         changes_made = True
 
@@ -357,7 +386,9 @@ class SecretFixer:
         """
         var_lower = var_name.lower().replace('-', '_')
 
-        
+        # If it's a specific, clear identifier (more than 6 chars), use it directly.
+        # This preserves full context e.g. openai_api_key → OPENAI_API_KEY
+        # Short names (e.g. "key", "pwd") fall through to pattern matching below.
         if re.match(r'^[a-z][a-z0-9_]*$', var_lower) and len(var_lower) > 6:
             return var_lower.upper()
 
