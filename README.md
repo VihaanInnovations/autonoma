@@ -108,7 +108,7 @@ cd autonoma
 ./run.sh
 
 # 4. In a new terminal, run on your repo
-python -m daemon.cli analyze ./your-repo --auto-fix --verbose
+py -m daemon.cli analyze ./your-repo --auto-fix --verbose
 
 # Note: The daemon must be running in one terminal 
 # before you use the CLI in another.
