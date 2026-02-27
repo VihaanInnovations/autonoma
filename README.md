@@ -113,6 +113,7 @@ py -m daemon.cli analyze ./your-repo --auto-fix --verbose
 # Note: The daemon must be running in one terminal 
 # before you use the CLI in another.
 ```
+[Installation & Quick Start Guide →](https://youtu.be/mo9OX6hxQpI)
 
 CLI is the primary supported interface.
 
