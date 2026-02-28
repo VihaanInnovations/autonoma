@@ -115,6 +115,7 @@ py -m daemon.cli analyze ./your-repo --auto-fix --verbose
 ```
 [Installation & Quick Start Guide →](https://youtu.be/mo9OX6hxQpI)
 
+
 CLI is the primary supported interface.
 
 VS Code extension: experimental preview.
