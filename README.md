@@ -23,7 +23,7 @@ It runs locally. No telemetry. No cloud calls. No account.
 
 Searched GitHub for exposed secrets using `api_key = "sk-" language:Python`. Found a real public repo with live exposed Azure Vision and OpenAI API keys. Cloned it. Ran Autonoma.
 
-Fixed both secrets cleanly. Refused the edge case where two patterns overlapped. Nothing else in the codebase was touched.
+Fixed both secrets cleanly. Refused the edge case where the pattern couldn't be cleanly isolated. Nothing else in the codebase was touched.
 
 [Watch the full demo →](#)
 
@@ -104,27 +104,24 @@ Every fix produces one of four outcomes:
 
 Refusal isn't a failure. It means Autonoma looked at the code and decided it couldn't guarantee the fix was safe. A wrong fix is worse than no fix.
 
-**Secret used in multiple scopes**
+**No Environment Contract**
 ```python
-API_KEY = "sk-live-abc123"
-headers = {"Authorization": API_KEY}
-config = setup(key=API_KEY)  # REFUSED — used in 2+ places, unsafe to replace blindly
+API_KEY = "sk-live-abc123" # REFUSED — Project lacks a .env file or dotenv dependency.
 ```
 
-**Secret inside a dynamic expression**
+**Ambiguous Variable Name**
 ```python
-token = "Bearer " + "sk-live-abc123"  # REFUSED — string concatenation, ambiguous replacement
+x = "sk-live-abc123" # REFUSED — Cannot determine safe env var name from 'x'.
 ```
 
-**Secret inside a conditional**
+**Already Compliant**
 ```python
-if env == "prod":
-    API_KEY = "sk-live-abc123"  # REFUSED — conditional assignment, scope not guaranteed
+API_KEY = os.getenv("API_KEY", "sk-live-abc123") # REFUSED — Line already uses environment variable lookup.
 ```
 
-**Overlapping patterns**
+**Ambiguous Secret Pattern**
 ```python
-SECRET = "sk-azure-abc_openai-xyz"  # REFUSED — multiple patterns overlap, cannot isolate
+token = "Bearer " + "sk-live-abc123" # REFUSED — Could not cleanly isolate the literal assignment.
 ```
 
 If Autonoma refuses something you think is safe, open an issue with the pattern. That's genuinely useful.
