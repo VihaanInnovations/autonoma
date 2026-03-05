@@ -153,7 +153,8 @@ cd autonoma
 py -m daemon.cli analyze ./your-repo --auto-fix --verbose
 ```
 
-The daemon needs to be running before you use the CLI. Two terminals, not one.
+Note: 
+current version requires two terminals — start the daemon first, then run the CLI in a second terminal. Single-command CI-friendly install is in progress for the next release.
 
 [Full installation guide →](#)
 
