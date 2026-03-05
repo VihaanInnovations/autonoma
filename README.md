@@ -25,7 +25,7 @@ Searched GitHub for exposed secrets using `api_key = "sk-" language:Python`. Fou
 
 Fixed both secrets cleanly. Refused the edge case where the pattern couldn't be cleanly isolated. Nothing else in the codebase was touched.
 
-[Watch the full demo →](#)
+[Watch the full demo →](https://www.youtube.com/watch?v=H3CyXHh6GzQ)
 
 ---
 
@@ -156,7 +156,7 @@ py -m daemon.cli analyze ./your-repo --auto-fix --verbose
 Note: 
 current version requires two terminals — start the daemon first, then run the CLI in a second terminal. Single-command CI-friendly install is in progress for the next release.
 
-[Full installation guide →](#)
+[Full installation guide →](https://www.youtube.com/watch?v=mo9OX6hxQpI)
 
 CLI is the primary interface. VS Code extension exists but is experimental — use it at your own risk.
 
