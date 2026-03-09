@@ -1,18 +1,18 @@
 """
-Autonoma — Secret Fixer (AST-based, batched per file)
+Autonoma - Secret Fixer (AST-based, batched per file)
 
 Applies deterministic fixes for SEC001/SEC002 using Python AST.
 All fixes for a single file are computed on one parse and applied in one
-write — no second pass needed.
+write - no second pass needed.
 
 Patches are applied bottom-to-top so line numbers never shift.
 `import os` is inserted once after the last module-level import.
 Syntax is validated once on the final patched code.
 
 Refusal/skip semantics:
-    SKIPPED  — nothing to do (already compliant, not a string literal)
-    REFUSED  — safety constraint prevents fix (no env contract, ambiguous name)
-    FAILED   — attempted but errored (parse failure, syntax break)
+    SKIPPED  - nothing to do (already compliant, not a string literal)
+    REFUSED  - safety constraint prevents fix (no env contract, ambiguous name)
+    FAILED   - attempted but errored (parse failure, syntax break)
     (SUCCESS maps to FIXED in the outer fixer.py layer)
 """
 import ast
@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 
-# ── Structured reason codes ─────────────────────────────────────────────
+# -- Structured reason codes ---------------------------------------------
 #
 #   SKIPPED = not applicable / already compliant
 #   REFUSED = found the issue but chose not to touch it
@@ -73,7 +73,7 @@ class BatchFixResult:
     any_fixed: bool = False
 
 
-# ── Env var name mapping ────────────────────────────────────────────────
+# -- Env var name mapping ------------------------------------------------
 
 _ENV_VAR_PATTERNS = {
     'password': 'PASSWORD',
@@ -106,7 +106,7 @@ def _get_env_var_name(var_name: str) -> Optional[str]:
     return None
 
 
-# ── AST helpers ─────────────────────────────────────────────────────────
+# -- AST helpers ---------------------------------------------------------
 
 def _find_assignment_at_line(tree: ast.Module, target_line: int) -> Optional[ast.Assign]:
     """Find ast.Assign whose target lives on target_line (1-indexed)."""
@@ -240,7 +240,7 @@ def _find_import_insert_line(tree: ast.Module) -> int:
     return 0
 
 
-# ── Env contract checker ────────────────────────────────────────────────
+# -- Env contract checker ------------------------------------------------
 
 class _EnvContractChecker:
     def __init__(self, repo_path: Optional[Path]):
@@ -292,7 +292,7 @@ class _EnvContractChecker:
         return False
 
 
-# ── Main fixer ──────────────────────────────────────────────────────────
+# -- Main fixer ----------------------------------------------------------
 
 class SecretFixer:
     """
@@ -363,8 +363,7 @@ class SecretFixer:
                     outcome="REFUSED", issue_id=issue.get("id", ""),
                     line=issue.get("line"),
                     reason=REASON_ENV_CONTRACT_MISSING,
-                    message="No .env file or dotenv dependency found. "
-                            "Create a .env.example to establish env var contract.",
+                    message="No environment contract found",
                 ))
             return result
 

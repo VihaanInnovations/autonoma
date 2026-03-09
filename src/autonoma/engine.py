@@ -151,13 +151,47 @@ class AnalysisEngine:
 
         issues = self._scanner.scan(content, str(file_path), disabled_rules)
 
-        seen = set()
-        unique_issues = []
+        # Deduplicate issues by (id, line) and overlapping spans
+        # Group issues by (rule_id, line)
+        groups: Dict[Tuple[str, int], List[Dict[str, Any]]] = {}
         for issue in issues:
-            key = make_issue_key(issue)
-            if key not in seen:
-                seen.add(key)
-                unique_issues.append(issue)
+            key = (issue.get("id", "unknown"), issue.get("line", 0))
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(issue)
+
+        unique_issues = []
+        for (rule_id, line), group in groups.items():
+            # Sort by col_offset to make merging easier
+            group.sort(key=lambda i: i.get("col_offset", -1))
+            
+            merged_in_group = []
+            for issue in group:
+                if not merged_in_group:
+                    merged_in_group.append(issue)
+                    continue
+                
+                prev = merged_in_group[-1]
+                
+                # Check for overlap
+                # Span 1: [start1, end1], Span 2: [start2, end2]
+                start1 = prev.get("col_offset", -1)
+                end1 = prev.get("end_col_offset") or (start1 + 1)
+                
+                start2 = issue.get("col_offset", -1)
+                end2 = issue.get("end_col_offset") or (start2 + 1)
+                
+                # If they overlap, keep one (prefer AST if available, or just the first)
+                if max(start1, start2) < min(end1, end2):
+                    # Overlap detected! 
+                    # Prefer the one with a more descriptive message or specifically from AST
+                    if issue.get("source") == "ast_engine_native" and prev.get("source") != "ast_engine_native":
+                        merged_in_group[-1] = issue
+                    continue
+                else:
+                    merged_in_group.append(issue)
+            
+            unique_issues.extend(merged_in_group)
 
         # Sort issues deterministically: by line, then rule_id
         unique_issues.sort(key=lambda i: (i.get("line", 0), i.get("id", "")))

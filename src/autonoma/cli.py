@@ -1,10 +1,15 @@
 """
-Autonoma — CLI
+Autonoma - CLI
 
 Single-process, daemon-free security scanner.
 """
 import sys
 from pathlib import Path
+
+from colorama import just_fix_windows_console
+
+# Fix Windows ANSI escape sequence leakage
+just_fix_windows_console()
 
 import click
 
@@ -19,7 +24,7 @@ from .reporter import report_text, report_json, report_fix_outcomes, report_hist
 @click.group()
 @click.version_option(__version__, prog_name="Autonoma", message="%(prog)s %(version)s")
 def cli():
-    """Autonoma — Deterministic code security scanner."""
+    """Autonoma - Deterministic code security scanner."""
     pass
 
 
@@ -103,8 +108,8 @@ def analyze(path, fmt, fail_on_findings, verbose, exclude, include_ext, auto_fix
                         ))
                     continue
 
-                # One call per file — batched internally
-                # dry_run → write=False (preview only)
+                # One call per file - batched internally
+                # dry_run -> write=False (preview only)
                 outcomes, diff_patch = fix_file_issues(
                     code=code,
                     file_path=file_path,

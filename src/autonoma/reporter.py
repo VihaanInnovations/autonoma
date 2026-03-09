@@ -14,7 +14,7 @@ from .engine import AnalysisReport
 from .history import HistoryReport
 
 
-# ── Constants ───────────────────────────────────────────────────────────
+# -- Constants -----------------------------------------------------------
 
 SCHEMA_VERSION = "1.0"
 
@@ -40,7 +40,7 @@ RULE_METADATA = {
 }
 
 
-# ── ANSI colors ─────────────────────────────────────────────────────────
+# -- ANSI colors ---------------------------------------------------------
 
 class _Colors:
     RED = "\033[91m"
@@ -84,7 +84,7 @@ def _utc_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-# ── Text reporter ──────────────────────────────────────────────────────
+# -- Text reporter ------------------------------------------------------
 
 def report_text(report: AnalysisReport, verbose: bool = False, quiet: bool = False, out: TextIO = None):
     """Print human-readable text report to stdout."""
@@ -205,7 +205,7 @@ def report_history_json(report: HistoryReport, out: TextIO = None):
     out.write("\n")
 
 
-# ── JSON reporter ──────────────────────────────────────────────────────
+# -- JSON reporter ------------------------------------------------------
 
 def report_json(report: AnalysisReport, out: TextIO = None, fix_outcomes: list = None, dry_run: bool = False):
     """Print machine-readable JSON report to stdout."""
@@ -262,7 +262,7 @@ def report_json(report: AnalysisReport, out: TextIO = None, fix_outcomes: list =
     out.write("\n")
 
 
-# ── Fix outcomes reporter ──────────────────────────────────────────────
+# -- Fix outcomes reporter ----------------------------------------------
 
 def report_fix_outcomes(outcomes: list, fmt: str = "text", out: TextIO = None,
                         dry_run: bool = False, diff_patches: list[str] = None, quiet: bool = False):
@@ -283,7 +283,7 @@ def report_fix_outcomes(outcomes: list, fmt: str = "text", out: TextIO = None,
 
     # Text mode
     if dry_run:
-        out.write(f"\n{_Colors.BOLD}{_Colors.YELLOW}=== DRY RUN — no files modified ==={_Colors.RESET}\n")
+        out.write(f"\n{_Colors.BOLD}{_Colors.YELLOW}=== DRY RUN - no files modified ==={_Colors.RESET}\n")
     else:
         out.write(f"\n{_Colors.BOLD}=== Auto-Fix Results ==={_Colors.RESET}\n")
 
@@ -303,7 +303,7 @@ def report_fix_outcomes(outcomes: list, fmt: str = "text", out: TextIO = None,
         if o.line:
             out.write(f":{o.line}")
         if o.message:
-            out.write(f"  — {o.message}")
+            out.write(f"  - {o.message}")
         out.write("\n")
         
     if diff_patches:
@@ -330,3 +330,9 @@ def report_fix_outcomes(outcomes: list, fmt: str = "text", out: TextIO = None,
             prefix = "WOULD_FIX" if (dry_run and state == "FIXED") else state
             summary_parts.append(f"{counts[state]} {prefix}")
     out.write(f"Summary: {', '.join(summary_parts)}\n")
+
+    # Hint for env contract if any were refused for that reason
+    if any(o.reason == "env_var_contract_not_found" for o in outcomes):
+        out.write(f"\n{_Colors.CYAN}Hint: add a .env.example to enable safe remediation{_Colors.RESET}\n")
+
+

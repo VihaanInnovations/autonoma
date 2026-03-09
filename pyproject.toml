@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autonoma-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "Deterministic code security scanner. Detects and remediates hardcoded secrets."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "click>=8.1",
+    "colorama",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
