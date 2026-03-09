@@ -1,24 +1,25 @@
-# Python
+# Python build artifacts
 __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
 build/
+
+# Virtual environments
 venv/
-*.egg
+.venv/
+
+# Test / lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Database & runtime
-daemon/db/chroma_db/
-daemon/logs/*.log
 *.sqlite3
 *.db
 secret.key
-
-# VS Code Extension
-vscode-extension/node_modules/
-vscode-extension/out/
-vscode-extension/*.vsix
-vscode-extension/package-lock.json
 
 # IDE
 .vscode/
@@ -28,6 +29,25 @@ vscode-extension/package-lock.json
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment files
 .env
 *.env
+!.env.example
+
+# Auto-fix backups
+*.bak
+
+# Test output artifacts
+**/evidence.csv
+**/evidence.json
+**/metrics_report.json
+**/acceptance_errors.txt
+**/history_test_output.txt
+
+# Temporary test directories
+test_*/
+GPT4Video-cobra-auto/
+demo-project-copy/
+
+# Python version managers
+.python-version

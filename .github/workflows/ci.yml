@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # ── Build package ─────────────────────────────────────────
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Verify package metadata
+        run: twine check dist/*
+
+      # ── Install from wheel (not editable) ─────────────────────
+      - name: Install wheel in clean environment
+        run: pip install dist/*.whl
+        shell: bash
+
+      # ── CLI smoke tests ───────────────────────────────────────
+      - name: autonoma --version
+        run: autonoma --version
+
+      - name: autonoma --help
+        run: autonoma --help
+
+      - name: Scan demo-project (text)
+        run: autonoma analyze demo-project/src --verbose
+
+      - name: Scan demo-project (JSON)
+        run: autonoma analyze demo-project/src --format json
+
+      - name: Dry-run auto-fix
+        run: autonoma analyze demo-project/src --dry-run
+
+      - name: Fail-on-findings exit code
+        run: |
+          autonoma analyze demo-project/src --fail-on-findings && exit 1 || echo "Exit code $? — correct (findings present)"
+        shell: bash
