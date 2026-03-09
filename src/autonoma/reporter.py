@@ -309,17 +309,17 @@ def report_fix_outcomes(outcomes: list, fmt: str = "text", out: TextIO = None,
     if diff_patches:
         out.write(f"\n{_Colors.BOLD}=== Proposed Code Changes ==={_Colors.RESET}\n")
         for patch in diff_patches:
-            for line in patch.splitlines():
+            for line in patch.splitlines(keepends=True):
                 if line.startswith("+") and not line.startswith("+++"):
-                    out.write(f"{_Colors.GREEN}{line}{_Colors.RESET}\n")
+                    out.write(f"{_Colors.GREEN}{line}{_Colors.RESET}")
                 elif line.startswith("-") and not line.startswith("---"):
-                    out.write(f"{_Colors.RED}{line}{_Colors.RESET}\n")
+                    out.write(f"{_Colors.RED}{line}{_Colors.RESET}")
                 elif line.startswith("@@"):
-                    out.write(f"{_Colors.CYAN}{line}{_Colors.RESET}\n")
+                    out.write(f"{_Colors.CYAN}{line}{_Colors.RESET}")
                 elif line.startswith("---") or line.startswith("+++"):
-                    out.write(f"{_Colors.BOLD}{line}{_Colors.RESET}\n")
+                    out.write(f"{_Colors.BOLD}{line}{_Colors.RESET}")
                 else:
-                    out.write(f"{line}\n")
+                    out.write(f"{line}")
             out.write("\n")
 
     # Deterministic summary footer

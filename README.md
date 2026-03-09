@@ -5,7 +5,6 @@
 ![Platform](https://img.shields.io/badge/Platform-linux%20%7C%20windows%20%7C%20macos-informational)
 ![Edition](https://img.shields.io/badge/Edition-Community-orange)
 ![PyPI Version](https://img.shields.io/pypi/v/autonoma-cli)
-![PyPI Downloads](https://img.shields.io/pypi/dm/autonoma-cli)
 
 
 **Deterministic secret remediation for Python.**

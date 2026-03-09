@@ -160,10 +160,15 @@ def fix_file_issues(
 
     diff_patch = None
     if batch_result.any_fixed and batch_result.fixed_code:
+        # Normalize both versions to ensure they end with a newline.
+        # This avoids "No newline at end of file" noise and jammed output.
+        orig_norm = code if code.endswith("\n") else code + "\n"
+        fixed_norm = batch_result.fixed_code if batch_result.fixed_code.endswith("\n") else batch_result.fixed_code + "\n"
+
         # Generate unified diff
         diff_lines = list(difflib.unified_diff(
-            code.splitlines(keepends=True),
-            batch_result.fixed_code.splitlines(keepends=True),
+            orig_norm.splitlines(keepends=True),
+            fixed_norm.splitlines(keepends=True),
             fromfile=f"a/{rel_file}",
             tofile=f"b/{rel_file}",
             n=3

@@ -508,7 +508,7 @@ class SecretFixer:
 
             col_start = assign.value.col_offset
             col_end = assign.value.end_col_offset
-            replacement = f"os.environ['{env_var_name}']"
+            replacement = f'os.environ["{env_var_name}"]'
             patched_line = original_line[:col_start] + replacement + original_line[col_end:]
 
             # Check for duplicate patch on same line (e.g. two issues on same line)
@@ -525,7 +525,7 @@ class SecretFixer:
             result.per_issue.append(SecretFixResult(
                 outcome="SUCCESS", issue_id=issue_id, line=line,
                 env_var_name=env_var_name,
-                message=f"Replaced with os.environ['{env_var_name}'].",
+                message=f'Replaced with os.environ["{env_var_name}"].',
             ))
 
         # ── Apply all patches ───────────────────────────────────────
