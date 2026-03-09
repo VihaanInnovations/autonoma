@@ -1,5 +1,9 @@
 """
-Autonoma — Deterministic code security scanner.
+Autonoma - Deterministic code security scanner.
 """
+from importlib.metadata import version, PackageNotFoundError
 
-__version__ = "0.1.0"
+try:
+    __version__ = version("autonoma-cli")
+except PackageNotFoundError:
+    __version__ = "0.1.1-dev"
