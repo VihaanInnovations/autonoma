@@ -1,10 +1,11 @@
 # Autonoma
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Platform](https://img.shields.io/badge/Platform-linux%20%7C%20windows%20%7C%20macos-informational)
 ![Edition](https://img.shields.io/badge/Edition-Community-orange)
 ![PyPI](https://img.shields.io/pypi/v/autonoma-cli)
+
 
 **Deterministic secret remediation for Python.**
 
