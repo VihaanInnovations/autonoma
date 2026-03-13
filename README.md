@@ -7,13 +7,19 @@
 ![PyPI Version](https://img.shields.io/pypi/v/autonoma-cli)
 
 
-**Deterministic secret remediation for Python.**
+**Automatically detect and safely fix hardcoded secrets in Python code.**
 
-Autonoma is a deterministic security scanner that detects and safely fixes hardcoded secrets in Python codebases.
+Deterministic secret remediation for Python.
 
-Unlike traditional secret scanners, Autonoma doesn't just report problems — it automatically replaces secrets with environment variable references when the fix can be proven safe.
+Autonoma detects and safely fixes hardcoded secrets in Python codebases.
 
-If safety cannot be guaranteed, it refuses the change.
+Key characteristics:
+
+- AST-based secret detection
+- Deterministic code transformations
+- Refuses unsafe modifications
+- Local-first (no telemetry)
+- MIT licensed
 
 
 ![Autonoma Demo](docs/Animation.gif)
