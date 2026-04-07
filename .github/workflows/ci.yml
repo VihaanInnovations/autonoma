@@ -56,18 +56,18 @@ jobs:
 
       - name: Dry-run fix
         # Use modern 'fix' command with --diff
-        run: autonoma fix demo-project/src --diff --dry-run
+        # Expected exit code 1 because findings exist
+        run: autonoma fix demo-project/src --diff --dry-run || [ $? -eq 1 ]
         shell: bash
 
       - name: Verify exit code 1 on findings
         # Confirm that findings lead to exit code 1
         run: |
-          autonoma scan demo-project/src
-          if [ $? -eq 1 ]; then
+          autonoma scan demo-project/src || EXIT_CODE=$?
+          if [ "$EXIT_CODE" -eq 1 ]; then
             echo "Correct: Exit code 1 on findings"
-            exit 0
           else
-            echo "Error: Expected exit code 1"
+            echo "Error: Expected exit code 1, but got $EXIT_CODE"
             exit 1
           fi
         shell: bash
