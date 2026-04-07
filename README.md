@@ -6,382 +6,175 @@
 ![Edition](https://img.shields.io/badge/Edition-Community-orange)
 ![PyPI Version](https://img.shields.io/pypi/v/autonoma-cli)
 
+**AST-based detection and safe remediation of hardcoded secrets in Python.**
 
-**Automatically detect and safely fix hardcoded secrets in Python code.**
-
-Deterministic secret remediation for Python.
-
-Autonoma detects and safely fixes hardcoded secrets in Python codebases.
-
-Key characteristics:
-
-- AST-based secret detection
-- Deterministic code transformations
-- Refuses unsafe modifications
-- Local-first (no telemetry)
-- MIT licensed
-
-
-![Autonoma Demo](docs/Animation.gif)
+Autonoma is a remediation layer that works alongside scanners like gitleaks. It scans your codebase for secrets and applies AST-based transformations to pivot them to environment variables safely. **Autonoma never rewrites code unless the transformation is provably safe. All uncertain cases are refused.**
 
 ---
 
-## Install
-
-The open-source package is published to PyPI as `autonoma-cli`.
+## Installation
 
 ```bash
 pip install autonoma-cli
 ```
 
-Once installed, use the `autonoma` command:
-
-```bash
-autonoma --version
-autonoma --help
-```
-
-## Quick Example
-
-Scan a project:
-
-```bash
-autonoma analyze ./your-project
-```
-
-Scan and apply safe fixes:
-
-```bash
-autonoma analyze ./your-project --auto-fix
-```
-
 ---
 
-## Example
+## Pre-commit Integration
 
-### Before
+Add this to your `.pre-commit-config.yaml` to ensure no secrets are committed:
 
-```python
-# settings.py
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "prod_db",
-        "USER": "admin",
-        "PASSWORD": "Pr0d@ccess2024!",  # SEC001
-        "HOST": "db.internal.company.com",
-    }
-}
-
-SENDGRID_API_KEY = "SG.live-abc123xyz987_realkey"  # SEC002
-```
-
-### After
-
-```python
-# settings.py
-
-import os
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "prod_db",
-        "USER": "admin",
-        "PASSWORD": os.environ["PASSWORD"],
-        "HOST": "db.internal.company.com",
-    }
-}
-
-SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
-```
-
-### Preview Fixes Safely
-
-Preview fixes safely before applying them to guarantee deterministic outputs:
-
-```diff
-$ autonoma analyze demo-project --diff
-
-- SENDGRID_API_KEY = "SG.live-abc123xyz987_realkey"
-+ SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
-```
-
-### Example CLI Output
-
-```
-$ autonoma analyze demo-project --auto-fix
-
-Scanning 10 files...
-
-SEC001  settings.py:8
-Hardcoded password detected
-Status: FIXED
-
-SEC002  config.py:3
-Hardcoded API key detected
-Status: FIXED
-
-SEC002  utils.py:14
-Ambiguous secret pattern
-Status: REFUSED
-
---------------------------------
-Files scanned: 10
-Issues detected: 3
-Fixed: 2
-Refused: 1
+```yaml
+- repo: local
+  hooks:
+    - id: autonoma
+      name: Autonoma Scan
+      entry: autonoma scan
+      language: system
+      types: [python]
 ```
 
 ---
 
 ## Commands
 
+Autonoma provides the following CLI commands:
+
+### scan
+Detection mode. Outputs JSON to `stdout` and human-readable summaries to `stderr`. Ideal for CI.
+
+# Scan a directory (outputs JSON findings to stdout)
+autonoma scan src/
+
+# To save JSON results to a file
+autonoma scan src/ > findings.json
+
+### fix
+Remedies hardcoded secrets. Applies AST rewrites and generates audit logs.
+
 ```bash
-autonoma analyze PATH
-autonoma analyze PATH --auto-fix
-autonoma analyze PATH --diff
-autonoma analyze PATH --json
-autonoma analyze PATH --ci
-autonoma history-scan PATH
-autonoma --version
+# Apply fixes
+autonoma fix src/
+
+# Preview patches before writing
+autonoma fix src/ --diff
+
+# Write remediation audit log (determines format by suffix .md/.json)
+autonoma fix src/ --report-out audit.json
 ```
 
----
+### history-scan
+Analyzes git history for secrets that were added and subsequently removed or modified. 
 
-## CLI Features
-
-Autonoma supports:
-
-- `--auto-fix` — apply deterministic safe fixes
-- `--diff` — preview proposed fixes as unified diffs
-- `--json` — emit machine-readable output for automation
-- `--ci` — use CI-oriented exit codes
-- `--quiet` — minimize console output for pipelines
-- `--threads` — parallelize scanning on larger repositories
-- `.autonomaignore` — exclude noisy paths
-- `history-scan` — detect secrets that still exist in Git history
-
----
-
-## What Autonoma Detects
-
-| Code       | Description                                        |
-| ---------- | -------------------------------------------------- |
-| **SEC001** | Hardcoded passwords                                |
-| **SEC002** | Hardcoded API keys                                 |
-| **SEC003** | High-risk SQL string construction                  |
-| **SEC004** | Python SSTI patterns                               |
-| **SEC005** | Insecure deserialization (`pickle`, unsafe `yaml`) |
-
-Auto-fix support:
-
-| Code              | Behavior             |
-| ----------------- | -------------------- |
-| **SEC001**        | Auto-fixed when safe |
-| **SEC002**        | Auto-fixed when safe |
-| **SEC003–SEC005** | Detection only       |
-
-Autonoma deliberately avoids automatic rewrites for logic-level vulnerabilities.
-
----
-
-## Safety Model
-
-Autonoma only applies a fix when all three conditions are satisfied:
-
-1. The transformation is structurally safe
-2. The environment variable contract can be established
-3. The modification introduces no ambiguity
-
-Every finding produces one of four outcomes:
-
-| Status      | Meaning                                        |
-| ----------- | ---------------------------------------------- |
-| **FIXED**   | Deterministic fix applied                      |
-| **REFUSED** | Change declined to prevent unsafe modification |
-| **SKIPPED** | Code already compliant                         |
-| **FAILED**  | Tool error                                     |
-
----
-
-## Refusal Examples
-
-Refusal is intentional.
-A wrong automated fix is worse than no fix.
-
-### No Environment Contract
-
-```python
-API_KEY = "sk-live-abc123"
-```
-
-Refused because the project has no `.env` or dotenv dependency.
-
-### Ambiguous Variable Name
-
-```python
-x = "sk-live-abc123"
-```
-
-Autonoma cannot safely infer an environment variable name.
-
-### Already Compliant
-
-```python
-API_KEY = os.getenv("API_KEY", "sk-live-abc123")
-```
-
-Environment lookup already exists.
-
-### Ambiguous Secret Construction
-
-```python
-token = "Bearer " + "sk-live-abc123"
-```
-
-Literal cannot be safely isolated.
-
----
-
-## Git History Scanning
-
-Autonoma can also detect secrets that were committed in the past and later removed from the working tree.
+> [!NOTE]
+> **Detection only.** This command does not rewrite git history or modify commits. 
 
 ```bash
 autonoma history-scan .
 ```
 
-This helps identify secrets that still exist in Git history and may remain accessible through old commits, forks, mirrors, or cloned repositories.
-
 ---
 
-## Why Autonoma Exists
+## Example Workflow
 
-Most security scanners stop at detection.
-Developers still need to manually remove secrets from code.
-
-Autonoma focuses on deterministic remediation — automatically fixing the subset of issues that can be proven safe.
-
-If safety cannot be guaranteed, it refuses the change instead of guessing.
-
----
-
-## What Autonoma Deliberately Does NOT Do
-
-Autonoma intentionally avoids features that cannot be made deterministic.
-
-It does not perform:
-
-- full taint analysis
-- full data flow analysis
-- automatic SQL injection rewriting
-- automatic SSTI remediation
-- LLM-generated patches
-
-Only transformations that can be proven safe are applied automatically.
-Everything else is flagged for human review.
-
----
-
-## CI Example
-
-Autonoma can run directly in CI pipelines.
-
-```yaml
-- name: Install Autonoma
-  run: pip install autonoma-cli
-
-- name: Scan repository
-  run: autonoma analyze . --ci
+### Before
+```python
+# settings.py
+DATABASES = {
+    "default": {
+        "PASSWORD": "Pr0d@ccess2024!",  # SEC001
+    }
+}
+SENDGRID_API_KEY = "SG.xYz123_real_key_value_9fj3K"  # SEC002
 ```
 
-Exit codes:
-
-- `0` — no issues found
-- `1` — issues found, but none are automatically fixable
-- `2` — fixable issues found
-- `3` — internal error
-
----
-
-## Architecture
-
-Autonoma is a local-first security remediation tool.
-
-Key characteristics:
-
-- Python 3.10+
-- AST-based secret detection and remediation
-- deterministic code transformations
-- no telemetry
-- no cloud dependency
-- no LLM usage
-
-All analysis runs entirely on the local machine.
+### After (`autonoma fix .`)
+```python
+# settings.py
+import os
+DATABASES = {
+    "default": {
+        "PASSWORD": os.environ["PASSWORD"],
+    }
+}
+SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
+```
 
 ---
 
-## Validation
+## CI/CD Integration
 
-Autonoma has been tested across synthetic repositories, seeded secret datasets and real-world open-source Python projects containing exposed credentials.
+### GitHub Actions (Scan Only)
+To fail your build if any secrets are detected:
 
-Current validation results:
+```yaml
+- name: Scan for secrets
+  run: autonoma scan .
+```
 
-- 0 crashes across tested repositories
-- 0 syntax breakage after auto-fix
-- deterministic output across repeated runs
-- idempotent fixes on rerun
-- dry-run and diff preview do not modify files
-
-Performance benchmarks:
-
-| Repository Size | Files | LOC    | Runtime |
-|-----------------|------:|-------:|--------:|
-| Small           | 5     | 503    | 0.16s   |
-| Medium          | 34    | 3,029  | 0.24s   |
-| Large           | 77    | 10,025 | 0.27s   |
-| Very Large      | 351   | 30,063 | 0.55s   |
-
-Unsafe patterns are refused instead of rewritten.
+### Exit Codes:
+- `0`: No findings.
+- `1`: Findings detected (even if unfixable).
+- `2+`: Tool/Runtime error.
 
 ---
 
-## Enterprise
+## Legacy Commands
 
-Autonoma Community Edition focuses on deterministic local remediation for Python projects.
+`analyze` is retained for backwards compatibility. We recommend migrating to `scan` or `fix`.
 
-Planned enterprise capabilities include:
+```bash
+# Equivalent to 'autonoma scan'
+autonoma analyze src/ --detect-only
 
-- policy enforcement
-- CI/CD integration
-- audit logs
-- approval workflows
-- multi-repository orchestration
+# Equivalent to 'autonoma fix'
+autonoma analyze src/ --auto-fix
+```
 
-Enterprise capabilities are under development.
-
-If your team is interested in early evaluation or pilot deployments,
-feel free to reach out.
 ---
 
-## Contributing
+## Safety & Constraints
 
-Bug reports and edge cases are extremely valuable.
+Autonoma prioritizes safety. It only rewrites code when it can prove the transformation is semantic-preserving.
 
-If Autonoma:
+### What it remediates
+- Simple assignments: `API_KEY = "secret"`
+- Class attributes: `class Config: PASS = "secret"`
+- Keyword arguments: `connect(password="secret")`
 
-- fixes something incorrectly
-- refuses a safe pattern
-- misses a detectable secret
+### What it refuses (by design)
+- **Complex Expressions**: f-strings, concatenations, or function calls on the RHS.
+- **Ambiguous Targets**: Multiple assignments (`A = B = "secret"`) or tuple unpacking.
+- **Missing Context**: If no `.env` or environment contract is found in the repo.
 
-please open an issue with the code sample.
+Refused cases are reported and will cause non-zero exit codes in CI.
 
-Pull requests are welcome.
+### What it does not do
+- It does not "guess" secrets using entropy (it uses heuristic name matching).
+- It does not modify non-Python files in the Community Edition.
+- It does not delete your code; backups are written as `<file>.bak` before modification.
+
+---
+
+## JSON Schema
+Reports use a consistent top-level structure:
+
+```json
+{
+  "schema_version": "1.0",
+  "tool_name": "autonoma",
+  "tool_version": "0.1.4",
+  "generated_at": "2026-03-24T12:00:00Z",
+  "summary": {
+    "total_findings": 1,
+    "safe_to_fix": 1,
+    "refused": 0
+  },
+  "findings": []
+}
+```
 
 ---
 
 ## License
-
 MIT License

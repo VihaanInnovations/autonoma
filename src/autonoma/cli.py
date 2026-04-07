@@ -1,8 +1,5 @@
-"""
-Autonoma - CLI
-
-Single-process, daemon-free security scanner.
-"""
+"""CLI for Autonoma security scanner."""
+import subprocess
 import sys
 from pathlib import Path
 
@@ -15,48 +12,44 @@ import click
 
 from . import __version__
 from ._internal.heuristics import ALL_SUPPORTED_EXTENSIONS
-from .engine import AnalysisEngine
+from .engine import AnalysisEngine, DetectFinding, DetectReport, DetectSummary
 from .history import HistoryEngine
 from .fixer import fix_file_issues, FixOutcome, FIXED, REFUSED, SKIPPED, FAILED
-from .reporter import report_text, report_json, report_fix_outcomes, report_history_text, report_history_json
+from .audit import generate_audit_log
+from .reporter import (
+    report_text, report_json, report_fix_outcomes,
+    report_history_text, report_history_json, report_detect_json,
+    _utc_iso
+)
 
 
 @click.group()
 @click.version_option(__version__, prog_name="Autonoma", message="%(prog)s %(version)s")
 def cli():
-    """Autonoma - Deterministic code security scanner."""
+    """Autonoma - code security scanner."""
     pass
 
 
-@cli.command()
-@click.argument("path", type=click.Path(exists=True))
-@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format.")
-@click.option("--fail-on-findings", is_flag=True, help="Exit 1 if any issues are found.")
-@click.option("--verbose", is_flag=True, help="Show progress and debug info.")
-@click.option("--exclude", multiple=True, help="Glob patterns to exclude (repeatable).")
-@click.option("--include-ext", multiple=True, help="Extra extensions to scan, e.g. --include-ext .js --include-ext .ts")
-@click.option("--auto-fix", is_flag=True, help="Auto-fix SEC001/SEC002 issues (deterministic, with .bak backup).")
-@click.option("--dry-run", is_flag=True, help="Preview auto-fix patches without writing files.")
-@click.option("--diff", is_flag=True, help="Preview auto-fix via git-style unified diff patch.")
-@click.option("--ci", is_flag=True, help="Run in CI mode with specific exit codes (0=clean, 1=secrets, 2=fixable).")
-@click.option("--json", is_flag=True, help="Output a single machine-readable JSON payload.")
-@click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
-@click.option("--threads", "-t", type=int, default=1, help="Number of concurrent threads to use for scanning.")
-def analyze(path, fmt, fail_on_findings, verbose, exclude, include_ext, auto_fix, dry_run, diff, ci, json, quiet, threads):
-    """Analyze a file or directory for security issues."""
+def _run_analyze_pipeline(
+    path, fmt="text", verbose=False, exclude=(), include_ext=(),
+    auto_fix=False, dry_run=False, diff=False, ci=False, json_out=False,
+    report_out=None, quiet=False, threads=1, detect_only=False
+):
     try:
         target = Path(path).resolve()
 
-        if json:
+        if json_out:
             fmt = "json"
 
-        # --diff implies --dry-run
         if diff:
             dry_run = True
-
-        # --dry-run implies --auto-fix
         if dry_run:
             auto_fix = True
+        if detect_only:
+            auto_fix = True
+            dry_run = True  
+            quiet = True    
+            verbose = False 
 
         # Build allowed extensions set
         allowed = {".py"}
@@ -79,8 +72,7 @@ def analyze(path, fmt, fail_on_findings, verbose, exclude, include_ext, auto_fix
         finally:
             engine.close()
 
-        # Output text scan results immediately (JSON is deferred)
-        if fmt != "json":
+        if fmt != "json" and not detect_only:
             report_text(report, verbose=verbose, quiet=quiet)
 
         # Auto-fix: batch per file
@@ -98,11 +90,15 @@ def analyze(path, fmt, fail_on_findings, verbose, exclude, include_ext, auto_fix
                 try:
                     code = file_path.read_text(encoding="utf-8")
                 except Exception as e:
+                    try:
+                        rel_file = str(file_path.relative_to(base_path))
+                    except ValueError:
+                        rel_file = str(file_path)
                     for issue in fr.issues:
                         all_outcomes.append(FixOutcome(
                             state=FAILED,
                             issue_id=issue.get("id", "?"),
-                            file=fr.file,
+                            file=rel_file,
                             line=issue.get("line"),
                             message=f"Cannot read file: {e}",
                         ))
@@ -121,7 +117,79 @@ def analyze(path, fmt, fail_on_findings, verbose, exclude, include_ext, auto_fix
                 if diff_patch and diff:
                     all_diffs.append(diff_patch)
 
-            report_fix_outcomes(all_outcomes, fmt=fmt, dry_run=dry_run, diff_patches=all_diffs if diff else None, quiet=quiet)
+            if not json_out and not detect_only:
+                report_fix_outcomes(all_outcomes, fmt=fmt, dry_run=dry_run, diff_patches=all_diffs if diff else None, quiet=quiet)
+            
+            # 4. Generate Audit Log File
+            if report_out:
+                out_p = Path(report_out).resolve()
+                try:
+                    written_files = generate_audit_log(all_outcomes, out_p)
+                    if not json_out and not quiet:
+                        for wf in written_files:
+                            click.echo(f"\nAudit log written to: {wf}")
+                except Exception as e:
+                    click.secho(f"\nERROR: Failed to write audit log to {out_p}", fg="red", bold=True, err=True)
+                    click.secho(f"Details: {e}", fg="red", err=True)
+                    click.secho("CRITICAL: Remediation may have completed, but the audit report failed to save.", fg="yellow", bold=True, err=True)
+                    sys.exit(1)
+
+        # --- Detect Only Mode (outside report.total_issues loop) ---
+        if detect_only:
+            detect_findings = []
+            for fr in sorted(report.file_results, key=lambda r: r.file):
+                for issue in fr.issues:
+                    # Find matching outcome
+                    found_outcome = next((o for o in all_outcomes if o.file == fr.file and o.line == issue.get("line") and o.issue_id == issue.get("id")), None)
+                    if not found_outcome:
+                        continue
+                    
+                    detect_findings.append(DetectFinding(
+                        file=fr.file,
+                        line=issue.get("line"),
+                        col=issue.get("col_offset"),
+                        pattern_type=issue.get("pattern_type", "unknown"),
+                        severity=issue.get("severity", "medium"),
+                        safe_to_fix=(found_outcome.state == "FIXED"),
+                        refusal_reason=found_outcome.reason if found_outcome.state == "REFUSED" else None,
+                        suggested_env_var=found_outcome.env_var if found_outcome.state == "FIXED" else None,
+                        rule_id=issue.get("id"),
+                        fingerprint=found_outcome.fingerprint or "sha256:unknown",
+                        provider=issue.get("provider")
+                    ))
+            
+            # --- Summary to stderr ---
+            safe_count = sum(1 for f in detect_findings if f.safe_to_fix)
+            refused_count = sum(1 for f in detect_findings if not f.safe_to_fix)
+            
+            detect_summary = DetectSummary(
+                files_processed=report.files_scanned,
+                total_findings=len(detect_findings),
+                safe_to_fix=safe_count,
+                refused=refused_count
+            )
+            
+            detect_report = DetectReport(
+                generated_at=_utc_iso(),
+                summary=detect_summary,
+                findings=detect_findings
+            )
+            report_detect_json(detect_report)
+            
+            click.echo("Autonoma detect-only summary", err=True)
+            click.echo(
+                f"files_processed={detect_summary.files_processed} "
+                f"findings={detect_summary.total_findings} "
+                f"safe_to_fix={detect_summary.safe_to_fix} "
+                f"refused={detect_summary.refused}",
+                err=True
+            )
+            
+            # Exit code: 0 if no findings, 1 if findings present
+            if len(detect_findings) > 0:
+                sys.exit(1)
+            else:
+                sys.exit(0)
 
         if fmt == "json":
             report_json(report, fix_outcomes=all_outcomes if (auto_fix and report.total_issues > 0) else None, dry_run=dry_run)
@@ -139,7 +207,7 @@ def analyze(path, fmt, fail_on_findings, verbose, exclude, include_ext, auto_fix
             else:
                 sys.exit(1)
         
-        if fail_on_findings and report.total_issues > 0:
+        if report.total_issues > 0:
             sys.exit(1)
 
     except SystemExit:
@@ -148,16 +216,75 @@ def analyze(path, fmt, fail_on_findings, verbose, exclude, include_ext, auto_fix
         click.echo(f"Error: {e}", err=True)
         sys.exit(3)
 
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True))
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option("--verbose", is_flag=True, help="Show progress and debug info.")
+@click.option("--exclude", multiple=True, help="Glob patterns to exclude (repeatable).")
+@click.option("--include-ext", multiple=True, help="Extra extensions to scan, e.g. --include-ext .js --include-ext .ts")
+@click.option("--auto-fix", is_flag=True, help="Auto-fix SEC001/SEC002 issues (deterministic, with .bak backup).")
+@click.option("--dry-run", is_flag=True, help="Preview auto-fix patches without writing files.")
+@click.option("--diff", is_flag=True, help="Preview auto-fix via git-style unified diff patch.")
+@click.option("--ci", is_flag=True, help="Run in CI mode with specific exit codes (0=clean, 1=secrets, 2=fixable).")
+@click.option("--json", "json_out", is_flag=True, help="Output a single machine-readable JSON payload.")
+@click.option("--report-out", type=click.Path(), help="Path to write the remediation audit log (determines format by suffix .md/.json).")
+@click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
+@click.option("--threads", "-t", type=int, default=1, help="Number of concurrent threads to use for scanning.")
+@click.option("--detect-only", is_flag=True, help="Run remediation analysis without modifying files. Outputs JSON findings.")
+def analyze(path, fmt, verbose, exclude, include_ext, auto_fix, dry_run, diff, ci, json_out, report_out, quiet, threads, detect_only):
+    """[LEGACY] Analyze path for secrets."""
+    _run_analyze_pipeline(
+        path=path, fmt=fmt, verbose=verbose,
+        exclude=exclude, include_ext=include_ext, auto_fix=auto_fix,
+        dry_run=dry_run, diff=diff, ci=ci, json_out=json_out,
+        report_out=report_out, quiet=quiet, threads=threads, detect_only=detect_only
+    )
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True))
+@click.option("--verbose", is_flag=True, help="Show progress info on stderr.")
+@click.option("--exclude", multiple=True, help="Patterns to exclude.")
+@click.option("--include-ext", multiple=True, help="Extra extensions to scan.")
+@click.option("--threads", "-t", type=int, default=1, help="Concurrent threads.")
+@click.option("--ci", is_flag=True, help="CI mode (0=none, 1=any, 2=fixable).")
+def scan(path, verbose, exclude, include_ext, threads, ci):
+    """Scan for hardcoded secrets (non-mutating, JSON findings to stdout)."""
+    _run_analyze_pipeline(
+        path=path, detect_only=True,
+        verbose=verbose, exclude=exclude, include_ext=include_ext, threads=threads, ci=ci
+    )
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True))
+@click.option("--dry-run", is_flag=True, help="Preview fixes without writing files.")
+@click.option("--diff", is_flag=True, help="Preview via unified diff.")
+@click.option("--report-out", type=click.Path(), help="Path to write remediation audit log.")
+@click.option("--json", "json_out", is_flag=True, help="Output machine-readable JSON.")
+@click.option("--exclude", multiple=True, help="Exclude patterns.")
+@click.option("--include-ext", multiple=True, help="Include extensions.")
+@click.option("--threads", "-t", type=int, default=1, help="Number of threads.")
+@click.option("--quiet", "-q", is_flag=True, help="Minimize console output.")
+@click.option("--ci", is_flag=True, help="CI mode.")
+def fix(path, dry_run, diff, report_out, json_out, exclude, include_ext, threads, quiet, ci):
+    """Automatically fix hardcoded secrets (mutating)."""
+    _run_analyze_pipeline(
+        path=path, auto_fix=True, dry_run=dry_run, diff=diff, report_out=report_out,
+        json_out=json_out, exclude=exclude, include_ext=include_ext, threads=threads,
+        quiet=quiet, ci=ci, detect_only=False
+    )
+
 @cli.command(name="history-scan")
 @click.argument("path", type=click.Path(exists=True), default=".")
-@click.option("--fail-on-findings", is_flag=True, help="Exit 1 if any issues are found in history.")
 @click.option("--verbose", is_flag=True, help="Show progress and debug info.")
 @click.option("--exclude", multiple=True, help="Glob patterns to exclude (repeatable).")
 @click.option("--include-ext", multiple=True, help="Extra extensions to scan, e.g. --include-ext .js --include-ext .ts")
 @click.option("--json", is_flag=True, help="Output a single machine-readable JSON payload.")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
 @click.option("--threads", "-t", type=int, default=1, help="Number of concurrent threads to use for scanning.")
-def history_scan(path, fail_on_findings, verbose, exclude, include_ext, json, quiet, threads):
+def history_scan(path, verbose, exclude, include_ext, json, quiet, threads):
     """Scan git history for secrets that were added and removed."""
     try:
         target = Path(path).resolve()
@@ -187,7 +314,7 @@ def history_scan(path, fail_on_findings, verbose, exclude, include_ext, json, qu
         report_history_text(report)
 
         # Exit code
-        if fail_on_findings and report.total_findings > 0:
+        if report.total_findings > 0:
             sys.exit(1)
 
     except SystemExit:
@@ -195,6 +322,140 @@ def history_scan(path, fail_on_findings, verbose, exclude, include_ext, json, qu
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(3)
+
+
+
+@cli.command(name="pre-commit")
+@click.argument("files", nargs=-1, type=click.Path(exists=True))
+@click.option("--auto-fix", is_flag=True, help="Auto-fix SEC001/SEC002 and re-stage fixed files.")
+@click.option("--include-ext", multiple=True, help="Extra extensions to scan, e.g. --include-ext .js")
+@click.option("--exclude", multiple=True, help="Glob patterns to exclude (repeatable).")
+@click.option("--verbose", is_flag=True, help="Show progress and debug info.")
+@click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
+@click.option("--json", "json_out", is_flag=True, help="Output a single machine-readable JSON payload.")
+def pre_commit_cmd(files, auto_fix, include_ext, exclude, verbose, quiet, json_out):
+    """Run Autonoma as a pre-commit hook (scans only staged files)."""
+    try:
+        if not files:
+            sys.exit(0)
+
+        # Build allowed extensions set
+        allowed = {".py"}
+        for ext in include_ext:
+            ext = ext if ext.startswith(".") else f".{ext}"
+            if ext in ALL_SUPPORTED_EXTENSIONS:
+                allowed.add(ext)
+            else:
+                click.echo(f"Warning: '{ext}' not supported. Supported: {sorted(ALL_SUPPORTED_EXTENSIONS)}", err=True)
+
+        # Filter to only files with allowed extensions
+        targets = []
+        for f in files:
+            p = Path(f).resolve()
+            if p.suffix in allowed:
+                targets.append(p)
+
+        if not targets:
+            sys.exit(0)
+
+        engine = AnalysisEngine(allowed_extensions=allowed)
+        blocked = False
+        total_issues = 0
+
+        try:
+            for file_path in sorted(targets):
+                report = engine.run(
+                    target=file_path,
+                    exclude_patterns=list(exclude),
+                    verbose=verbose,
+                    threads=1,
+                )
+
+                if report.total_issues == 0:
+                    continue
+
+                total_issues += report.total_issues
+
+                if auto_fix:
+                    base_path = file_path.parent
+
+                    for fr in report.file_results:
+                        if fr.skipped or not fr.issues:
+                            continue
+
+                        try:
+                            code = Path(fr.abs_path).read_text(encoding="utf-8")
+                        except Exception as e:
+                            if not quiet:
+                                click.echo(f"Cannot read {fr.file}: {e}", err=True)
+                            blocked = True
+                            continue
+
+                        outcomes, diff_patch = fix_file_issues(
+                            code=code,
+                            file_path=Path(fr.abs_path),
+                            issues=fr.issues,
+                            repo_path=base_path,
+                            write=True,
+                        )
+
+                        file_blocked = False
+                        for outcome in outcomes:
+                            if outcome.state == REFUSED:
+                                file_blocked = True
+                                if not quiet:
+                                    click.echo(
+                                        f"REFUSED: {outcome.issue_id} in {outcome.file} "
+                                        f"line {outcome.line} — {outcome.message}",
+                                        err=True,
+                                    )
+                            elif outcome.state == FAILED:
+                                file_blocked = True
+                                if not quiet:
+                                    click.echo(
+                                        f"FAILED: {outcome.issue_id} in {outcome.file} "
+                                        f"line {outcome.line} — {outcome.message}",
+                                        err=True,
+                                    )
+
+                        if file_blocked:
+                            blocked = True
+                        else:
+                            # All issues fixed — re-stage the file
+                            any_fixed = any(o.state == FIXED for o in outcomes)
+                            if any_fixed:
+                                subprocess.run(
+                                    ["git", "add", str(file_path)],
+                                    check=False,
+                                    capture_output=True,
+                                )
+                                if not quiet:
+                                    click.echo(f"Fixed and re-staged: {file_path.name}")
+                else:
+                    # No auto-fix: any issue blocks the commit
+                    blocked = True
+            if json_out:
+                report_json(report, out=sys.stdout)
+            else:
+                report_text(report, verbose=verbose, quiet=quiet)
+        finally:
+            engine.close()
+
+        if blocked:
+            if not quiet and total_issues > 0:
+                click.echo(
+                    f"\nAutonoma: {total_issues} issue(s) found. Commit blocked.",
+                    err=True,
+                )
+            sys.exit(1)
+
+        sys.exit(0)
+
+    except SystemExit:
+        raise
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
 
 
 def main():

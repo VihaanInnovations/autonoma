@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .ast_engine import ASTEngine
 from ..decisions import DecisionOutcome, RefusalReason, AnalysisResult
+from ..audit import truncate_secret, detect_provider, generate_fingerprint
 
 
 # Default: Python only. User can expand via --include-ext.
@@ -52,6 +53,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high",
                 "extensions": {".py"},
+                "pattern_type": "password",
             },
             {
                 "id": "SEC002",
@@ -60,6 +62,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high",
                 "extensions": {".py"},
+                "pattern_type": "api_key",
             },
             {
                 "id": "SEC002",
@@ -68,6 +71,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high",
                 "extensions": {".py"},
+                "pattern_type": "token",
             },
             # --- JavaScript/TypeScript-only patterns ---
             {
@@ -77,6 +81,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high",
                 "extensions": {".js", ".jsx", ".ts", ".tsx"},
+                "pattern_type": "api_key",
             },
             {
                 "id": "SEC001",
@@ -85,6 +90,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high",
                 "extensions": {".js", ".jsx", ".ts", ".tsx"},
+                "pattern_type": "password",
             },
             {
                 "id": "SEC002",
@@ -93,6 +99,7 @@ class HeuristicsEngine:
                 "type": "security",
                 "severity": "high",
                 "extensions": {".js", ".jsx", ".ts", ".tsx"},
+                "pattern_type": "token",
             },
         ]
 
@@ -191,7 +198,14 @@ class HeuristicsEngine:
 
                             # Extract var name and skip metadata variables
                             matched_text = match.group(0)
-                            var_part = matched_text.split("=")[0].strip()
+                            parts = matched_text.split("=", 1)
+                            var_part = parts[0].strip()
+                            
+                            # Extract the raw secret value and strip quotes
+                            secret_val_part = parts[1].strip() if len(parts) > 1 else ""
+                            if len(secret_val_part) >= 2 and secret_val_part[0] in ("'", '"') and secret_val_part[-1] == secret_val_part[0]:
+                                secret_val_part = secret_val_part[1:-1]
+                                
                             # Strip JS keywords (const/let/var) if present
                             for kw in ("const ", "let ", "var "):
                                 if var_part.startswith(kw):
@@ -208,6 +222,10 @@ class HeuristicsEngine:
                                 "type": rule["type"],
                                 "severity": rule["severity"],
                                 "source": "heuristics_regex",
+                                "pattern_type": rule.get("pattern_type", "unknown"),
+                                "truncated_secret": truncate_secret(secret_val_part),
+                                "provider": detect_provider(secret_val_part),
+                                "fingerprint": generate_fingerprint(secret_val_part),
                             })
                     except Exception:
                         continue

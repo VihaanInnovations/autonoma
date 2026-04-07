@@ -1,0 +1,7 @@
+- id: autonoma
+  name: Autonoma Secret Scanner
+  description: Detect and optionally remediate hardcoded secrets.
+  entry: autonoma pre-commit
+  language: python
+  types: [python]
+  pass_filenames: true

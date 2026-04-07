@@ -9,12 +9,13 @@ import fnmatch
 import concurrent.futures
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple, Literal
 
 from .scanner import Scanner
 from .config import ConfigManager
 from ._internal.heuristics import DEFAULT_EXTENSIONS, ALL_SUPPORTED_EXTENSIONS
 from ._internal.merge_utils import make_issue_key
+from . import __version__
 
 
 # Directories to always skip
@@ -23,6 +24,47 @@ SKIP_DIRS = {
     'venv', '.venv', 'dist', 'build', '.tox', '.mypy_cache',
     '.eggs',
 }
+
+
+Severity = Literal["low", "medium", "high"]
+PatternType = Literal["password", "api_key", "token", "generic_secret", "unknown"]
+
+
+@dataclass(frozen=True)
+class DetectFinding:
+    """A finding from the remediation analysis pipeline (detect-only mode)."""
+    file: str
+    line: int
+    col: int
+    pattern_type: PatternType
+    severity: Severity
+    safe_to_fix: bool
+    refusal_reason: Optional[str]
+    suggested_env_var: Optional[str]
+    rule_id: str
+    fingerprint: str
+    provider: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class DetectSummary:
+    """Summary stats for detect-only mode."""
+    files_processed: int
+    total_findings: int
+    safe_to_fix: int
+    refused: int
+
+
+@dataclass(frozen=True)
+class DetectReport:
+    """Complete report for detect-only mode."""
+    schema_version: str = "1.0"
+    tool_name: str = "autonoma"
+    tool_version: str = __version__
+    generated_at: str = ""  # Populated at runtime
+    mode: str = "detect-only"
+    summary: Optional[DetectSummary] = None
+    findings: List[DetectFinding] = field(default_factory=list)
 
 
 @dataclass

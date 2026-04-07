@@ -1,29 +1,19 @@
-"""
-Autonoma — Decision Outcomes
-
-Explicit outcomes for all autonomous actions.
-This is the contract between the system and the user.
-"""
+"""Outcomes for autonomous actions."""
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional
+import os
 
 
 class DecisionOutcome(Enum):
-    """
-    Every autonomous action must result in one of these outcomes.
-    There is no ambiguity.
-    """
+    """Potential outcomes for any action."""
     SUCCESS = "SUCCESS"      # Action completed correctly
     REFUSED = "REFUSED"      # Action declined due to safety/scope
     FAILED = "FAILED"        # Action attempted but errored
 
 
 class RefusalReason(Enum):
-    """
-    Why the system refused to act.
-    Refusal is not failure — it's intentional restraint.
-    """
+    """Explicit reasons for refusal."""
     # Environment variable contract issues
     ENV_VAR_CONTRACT_NOT_FOUND = "env_var_contract_not_found"
     ENV_VAR_NAME_AMBIGUOUS = "env_var_name_ambiguous"
@@ -44,16 +34,21 @@ class RefusalReason(Enum):
     FIX_NOT_LOCALIZED = "fix_not_localized"
     FIX_VALIDATION_FAILED = "fix_validation_failed"
 
+    # AST-specific stable refusal codes
+    REFUSE_NON_CONSTANT_VALUE = "refuse_non_constant_value"
+    REFUSE_FSTRING_MIXED_EXPRESSION = "refuse_fstring_mixed_expression"
+    REFUSE_STRING_CONCATENATION = "refuse_string_concatenation"
+    REFUSE_UNSAFE_REWRITE_BOUNDARY = "refuse_unsafe_rewrite_boundary"
+    REFUSE_IMPORT_COLLISION = "refuse_import_collision"
+    REFUSE_UNSUPPORTED_NODE_TYPE = "refuse_unsupported_node_type"
+
     # Scope issues
     ISSUE_TYPE_NOT_SUPPORTED = "issue_type_not_supported"
     REQUIRES_ENTERPRISE = "requires_enterprise"
 
 
 class FailureReason(Enum):
-    """
-    Why the system failed (unexpected errors).
-    Failures are bugs, not features.
-    """
+    """Failure reasons (errors)."""
     PARSE_ERROR = "parse_error"
     IO_ERROR = "io_error"
     TIMEOUT = "timeout"

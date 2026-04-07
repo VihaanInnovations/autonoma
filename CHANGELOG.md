@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.4
+
+Release featuring pre-commit integration and safe remediation enhancements.
+
+### Added
+- **Pre-commit hook integration**: Native support for pre-commit via `hooks.yaml`.
+- **Audit logic hardening**: Improved detection for instance and class attributes in AST.
+
+### Changed
+- **Safety First Guarantee**: Elevated "provably safe" remediation policy to core project identity.
+- **CLI Exit Codes**: Standardized exit code `1` for all findings (removed `--fail-on-findings`).
+- **Heuristics**: Updated patterns for modern secret formats (e.g., Stripe `sk_live_...`).
+
+### Removed
+- **`--open-pr`**: Removed legacy pull request automation to focus on core CLI reliability.
+- **AI-narrative comments**: Cleaned up codebase for a more professional, artisanal developer voice.
+
+---
+
 ## 0.1.0
 
 Initial public release of the `autonoma-cli` package (Autonoma Community Edition).

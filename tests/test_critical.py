@@ -173,7 +173,8 @@ def test_stability(tmp_path: Path) -> Results:
         r.check(f"[{name}] json deterministic", len(set(json_runs)) == 1,
                 f"{len(set(json_runs))} distinct outputs")
 
-    return r
+    if __name__ == "__main__":
+        return r
 
 
 # ===========================================================================
@@ -257,7 +258,8 @@ def test_safe_fix(tmp_path: Path) -> Results:
             f"mismatch: {set(k for k in post if post.get(k) != post2.get(k))}")
 
     shutil.rmtree(fix2, ignore_errors=True)
-    return r
+    if __name__ == "__main__":
+        return r
 
 
 # ===========================================================================
@@ -322,7 +324,8 @@ def test_idempotency(tmp_path: Path) -> Results:
 
         shutil.rmtree(work, ignore_errors=True)
 
-    return r
+    if __name__ == "__main__":
+        return r
 
 
 # ===========================================================================
@@ -446,7 +449,8 @@ def setup():
     r.check("Dry-run zero modifications", pre_h == post_h)
 
     shutil.rmtree(fix, ignore_errors=True)
-    return r
+    if __name__ == "__main__":
+        return r
 
 
 # ===========================================================================
@@ -521,7 +525,8 @@ def test_scale(tmp_path: Path) -> Results:
         else:
             r.check(f"[{label}] <60s target", t < 60.0, f"{t:.3f}s")
 
-    return r
+    if __name__ == "__main__":
+        return r
 
 
 # ===========================================================================

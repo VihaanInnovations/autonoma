@@ -1,24 +1,9 @@
-"""
-Autonoma - Secret Fixer (AST-based, batched per file)
-
-Applies deterministic fixes for SEC001/SEC002 using Python AST.
-All fixes for a single file are computed on one parse and applied in one
-write - no second pass needed.
-
-Patches are applied bottom-to-top so line numbers never shift.
-`import os` is inserted once after the last module-level import.
-Syntax is validated once on the final patched code.
-
-Refusal/skip semantics:
-    SKIPPED  - nothing to do (already compliant, not a string literal)
-    REFUSED  - safety constraint prevents fix (no env contract, ambiguous name)
-    FAILED   - attempted but errored (parse failure, syntax break)
-    (SUCCESS maps to FIXED in the outer fixer.py layer)
-"""
+"""AST-based batched fixer for SEC001/SEC002."""
 import ast
 import re
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import dataclass, field
@@ -26,24 +11,24 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 
-# -- Structured reason codes ---------------------------------------------
-#
-#   SKIPPED = not applicable / already compliant
-#   REFUSED = found the issue but chose not to touch it
-#   FAILED  = attempted the fix and errored
-#
+# Reason codes
 
 # REFUSED — found but won't touch (safety / complexity constraints):
 REASON_ENV_CONTRACT_MISSING = "env_var_contract_not_found"
 REASON_ENV_NAME_AMBIGUOUS = "env_var_name_ambiguous"
-REASON_UNSUPPORTED_CONTEXT = "unsupported_context"
+REASON_NON_CONSTANT_VALUE = "refuse_non_constant_value"
+REASON_FSTRING_MIXED = "refuse_fstring_mixed_expression"
+REASON_STRING_CONCATENATION = "refuse_string_concatenation"
+REASON_UNSUPPORTED_NODE_TYPE = "refuse_unsupported_node_type"
+REASON_UNSAFE_REWRITE_BOUNDARY = "refuse_unsafe_rewrite_boundary"
+REASON_MULTIPLE_TARGETS = "refuse_multiple_targets"
+REASON_TUPLE_UNPACKING = "refuse_tuple_unpacking"
 
 # SKIPPED — not applicable / already compliant:
 REASON_ISSUE_NOT_SUPPORTED = "issue_type_not_supported"
 REASON_NO_FILE_PATH = "no_file_path"
 REASON_UNSUPPORTED_LANGUAGE = "unsupported_language"
 REASON_ALREADY_SAFE = "already_safe"
-REASON_NOT_STRING_LITERAL = "not_string_literal"
 REASON_NO_TARGET_LINE = "no_target_line"
 REASON_REDUNDANT_ENV_ASSIGNMENT = "redundant_env_assignment"
 REASON_ENV_FALLBACK_PATTERN = "env_fallback_pattern"
@@ -69,11 +54,12 @@ class SecretFixResult:
 class BatchFixResult:
     """Result of batched fixing for an entire file."""
     fixed_code: Optional[str] = None
+    safe_code: Optional[str] = None  # Original code with secrets masked
     per_issue: List[SecretFixResult] = field(default_factory=list)
     any_fixed: bool = False
 
 
-# -- Env var name mapping ------------------------------------------------
+# Env var mapping
 
 _ENV_VAR_PATTERNS = {
     'password': 'PASSWORD',
@@ -106,33 +92,32 @@ def _get_env_var_name(var_name: str) -> Optional[str]:
     return None
 
 
-# -- AST helpers ---------------------------------------------------------
+# AST helpers
 
-def _find_assignment_at_line(tree: ast.Module, target_line: int) -> Optional[ast.Assign]:
-    """Find ast.Assign whose target lives on target_line (1-indexed)."""
+def _find_target_node_at_line(tree: ast.Module, target_line: int) -> Optional[ast.AST]:
+    """Find ast.Assign or ast.keyword whose target/arg lives on target_line (1-indexed)."""
     for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and node.lineno == target_line:
-            return node
+        if hasattr(node, "lineno") and node.lineno == target_line:
+            if isinstance(node, (ast.Assign, ast.keyword)):
+                return node
     return None
 
 
 def _extract_var_name(target: ast.expr) -> Optional[str]:
     """
     Extract variable name from assignment target.
-    Handles Name, self.attr, cls.attr, os.environ["KEY"].
+    Handles Name, os.environ["KEY"].
     """
     if isinstance(target, ast.Name):
         return target.id
-    if isinstance(target, ast.Attribute):
-        return target.attr
     if isinstance(target, ast.Subscript):
         if isinstance(target.value, ast.Attribute):
             if (isinstance(target.value.value, ast.Name)
                     and target.value.value.id == 'os'
                     and target.value.attr == 'environ'):
                 sl = target.slice
-                if isinstance(sl, ast.Constant) and isinstance(sl.value, str):
-                    return sl.value
+                if isinstance(sl, (ast.Constant, ast.Str)):
+                    return sl.s if isinstance(sl, ast.Str) else sl.value
     return None
 
 
@@ -147,7 +132,7 @@ def _is_os_environ_target(target: ast.expr) -> bool:
 
 
 def _is_string_literal(node: ast.expr) -> bool:
-    return isinstance(node, ast.Constant) and isinstance(node.value, str)
+    return isinstance(node, (ast.Constant, ast.Str)) and isinstance(getattr(node, 's', getattr(node, 'value', None)), str)
 
 
 def _value_is_already_safe(node: ast.expr) -> bool:
@@ -184,28 +169,30 @@ def _is_inside_getenv_call(node: ast.expr) -> bool:
     return False
 
 
-def _is_unsupported_context(assign_node: ast.Assign) -> Optional[str]:
+def _is_unsupported_context(node: ast.AST) -> Optional[str]:
     """
-    Return a reason string if the assignment is in a context we can't
+    Return a stable reason code if the assignment or keyword is in a context we can't
     safely patch, or None if it's patchable.
     """
-    value = assign_node.value
+    value = getattr(node, 'value', None)
+    if value is None:
+        return REASON_UNSUPPORTED_NODE_TYPE
 
     # f-string containing the secret
     if isinstance(value, ast.JoinedStr):
-        return "Value is an f-string; cannot extract secret safely."
+        return REASON_FSTRING_MIXED
 
     # Function call (e.g. encrypt("secret"))
     if isinstance(value, ast.Call) and not _value_is_already_safe(value):
-        return "Value is a function call; cannot determine if it contains a secret."
+        return REASON_UNSUPPORTED_NODE_TYPE
 
     # Dict / List / Tuple containing the value
     if isinstance(value, (ast.Dict, ast.List, ast.Tuple)):
-        return "Value is a compound literal; per-element fixes not supported."
+        return REASON_UNSUPPORTED_NODE_TYPE
 
     # BinOp (e.g. "prefix" + secret)
     if isinstance(value, ast.BinOp):
-        return "Value is a concatenation; cannot isolate the secret."
+        return REASON_STRING_CONCATENATION
 
     return None
 
@@ -234,13 +221,13 @@ def _find_import_insert_line(tree: ast.Module) -> int:
 
     if (tree.body
             and isinstance(tree.body[0], ast.Expr)
-            and isinstance(tree.body[0].value, ast.Constant)):
+            and isinstance(tree.body[0].value, (ast.Constant, ast.Str))):
         return tree.body[0].end_lineno
 
     return 0
 
 
-# -- Env contract checker ------------------------------------------------
+# Env contract
 
 class _EnvContractChecker:
     def __init__(self, repo_path: Optional[Path]):
@@ -292,21 +279,10 @@ class _EnvContractChecker:
         return False
 
 
-# -- Main fixer ----------------------------------------------------------
+# Main fixer
 
 class SecretFixer:
-    """
-    AST-based batched fixer for SEC001/SEC002.
-
-    fix_file() processes ALL issues for a file in a single pass:
-      1. Parse AST once
-      2. Evaluate each issue → SUCCESS / REFUSED / SKIPPED
-      3. Collect all line patches (replacement strings)
-      4. Apply patches bottom-to-top (no line-shift)
-      5. Insert import os once (if needed)
-      6. Validate syntax once
-      7. Return BatchFixResult with per-issue outcomes
-    """
+    """AST-based batched fixer for SEC001/SEC002."""
 
     def __init__(self, repo_path: Optional[Path] = None):
         self.repo_path = repo_path
@@ -323,18 +299,8 @@ class SecretFixer:
     ) -> BatchFixResult:
         """
         Batch-fix all issues in a single file.
-
-        Args:
-            code: Full file content.
-            file_path: Absolute path.
-            issues: List of issue dicts from scanner (each has id, line, ...).
-
-        Returns:
-            BatchFixResult with per-issue outcomes and (optionally) patched code.
         """
         result = BatchFixResult()
-
-        # ── Pre-flight checks (apply to entire file) ────────────────
 
         if not file_path:
             for issue in issues:
@@ -367,8 +333,6 @@ class SecretFixer:
                 ))
             return result
 
-        # ── Parse AST once ──────────────────────────────────────────
-
         try:
             tree = ast.parse(code)
         except SyntaxError as e:
@@ -382,16 +346,12 @@ class SecretFixer:
             return result
 
         source_lines = code.splitlines()
-
-        # ── Evaluate each issue ─────────────────────────────────────
-        # Collect patches: list of (line_idx_0based, replacement_str, result)
-        patches: List[Tuple[int, str]] = []
+        patches: List[Tuple[int, str, str]] = []
 
         for issue in issues:
             issue_id = issue.get("id", "")
             line = issue.get("line")
 
-            # Not a fixable issue type
             if issue_id not in ("SEC001", "SEC002"):
                 result.per_issue.append(SecretFixResult(
                     outcome="SKIPPED", issue_id=issue_id, line=line,
@@ -408,26 +368,59 @@ class SecretFixer:
                 ))
                 continue
 
-            # Find assignment node
-            assign = _find_assignment_at_line(tree, line)
-            if assign is None:
+            target_node = _find_target_node_at_line(tree, line)
+            if target_node is None:
                 result.per_issue.append(SecretFixResult(
                     outcome="FAILED", issue_id=issue_id, line=line,
                     reason=REASON_NODE_NOT_FOUND,
-                    message=f"No assignment found at line {line}.",
+                    message=f"No target node found at line {line}.",
                 ))
                 continue
 
-            if not assign.targets:
+            # Strict validation based on "provably safe" rules
+            if isinstance(target_node, ast.Assign):
+                # Multiple targets (A = B = "...") REFUSE
+                if len(target_node.targets) > 1:
+                    result.per_issue.append(SecretFixResult(
+                        outcome="REFUSED", issue_id=issue_id, line=line,
+                        reason=REASON_MULTIPLE_TARGETS,
+                        message="Multiple assignment targets are not supported.",
+                    ))
+                    continue
+                # Tuple unpacking (A, B = "...", "...") REFUSE
+                if isinstance(target_node.targets[0], (ast.Tuple, ast.List)):
+                    result.per_issue.append(SecretFixResult(
+                        outcome="REFUSED", issue_id=issue_id, line=line,
+                        reason=REASON_TUPLE_UNPACKING,
+                        message="Tuple/list unpacking is not supported.",
+                    ))
+                    continue
+                
+                var_name = _extract_var_name(target_node.targets[0])
+                value_node = target_node.value
+                is_environ_target = _is_os_environ_target(target_node.targets[0])
+            elif isinstance(target_node, ast.keyword):
+                # **kwargs unpacking REFUSE
+                if target_node.arg is None:
+                    result.per_issue.append(SecretFixResult(
+                        outcome="REFUSED", issue_id=issue_id, line=line,
+                        reason=REASON_UNSUPPORTED_NODE_TYPE,
+                        message="**kwargs unpacking is not supported.",
+                    ))
+                    continue
+                var_name = target_node.arg
+                value_node = target_node.value
+                is_environ_target = False
+            else:
                 result.per_issue.append(SecretFixResult(
-                    outcome="FAILED", issue_id=issue_id, line=line,
-                    reason=REASON_NODE_NOT_FOUND,
-                    message=f"Assignment at line {line} has no targets.",
+                    outcome="REFUSED", issue_id=issue_id, line=line,
+                    reason=REASON_UNSUPPORTED_NODE_TYPE,
+                    message="Unsupported node type for fixing.",
                 ))
                 continue
 
             # Fallback pattern?
-            if _is_inside_getenv_call(assign.value):
+            if _is_inside_getenv_call(value_node):
                 result.per_issue.append(SecretFixResult(
                     outcome="SKIPPED", issue_id=issue_id, line=line,
                     reason=REASON_ENV_FALLBACK_PATTERN,
@@ -436,7 +429,7 @@ class SecretFixer:
                 continue
 
             # Already safe?
-            if _value_is_already_safe(assign.value):
+            if _value_is_already_safe(value_node):
                 result.per_issue.append(SecretFixResult(
                     outcome="SKIPPED", issue_id=issue_id, line=line,
                     reason=REASON_ALREADY_SAFE,
@@ -444,25 +437,23 @@ class SecretFixer:
                 ))
                 continue
 
-            # Not a string literal?
-            if not _is_string_literal(assign.value):
-                ctx_reason = _is_unsupported_context(assign)
+            # Not a string literal? (Refuse f-strings, concatenation, etc.)
+            if not _is_string_literal(value_node):
+                ctx_reason = _is_unsupported_context(target_node)
                 if ctx_reason:
                     result.per_issue.append(SecretFixResult(
                         outcome="REFUSED", issue_id=issue_id, line=line,
-                        reason=REASON_UNSUPPORTED_CONTEXT,
-                        message=f"Line {line}: {ctx_reason}",
+                        reason=ctx_reason,
+                        message=f"Line {line} refused: {ctx_reason}",
                     ))
                 else:
                     result.per_issue.append(SecretFixResult(
-                        outcome="SKIPPED", issue_id=issue_id, line=line,
-                        reason=REASON_NOT_STRING_LITERAL,
+                        outcome="REFUSED", issue_id=issue_id, line=line,
+                        reason=REASON_NON_CONSTANT_VALUE,
                         message=f"Value at line {line} is not a string literal.",
                     ))
                 continue
 
-            # Extract variable name
-            var_name = _extract_var_name(assign.targets[0])
             if var_name is None:
                 result.per_issue.append(SecretFixResult(
                     outcome="REFUSED", issue_id=issue_id, line=line,
@@ -471,7 +462,6 @@ class SecretFixer:
                 ))
                 continue
 
-            # Determine env var name
             env_var_name = _get_env_var_name(var_name)
             if env_var_name is None:
                 result.per_issue.append(SecretFixResult(
@@ -481,8 +471,7 @@ class SecretFixer:
                 ))
                 continue
 
-            # Prevent redundant os.environ["KEY"] = os.environ["KEY"]
-            if _is_os_environ_target(assign.targets[0]) and var_name == env_var_name:
+            if is_environ_target and var_name == env_var_name:
                 result.per_issue.append(SecretFixResult(
                     outcome="SKIPPED", issue_id=issue_id, line=line,
                     reason=REASON_REDUNDANT_ENV_ASSIGNMENT,
@@ -490,28 +479,33 @@ class SecretFixer:
                 ))
                 continue
 
-            # Check for unsupported context (redundant with non-string check,
-            # but catches edge cases like ternary with string)
-            ctx_reason = _is_unsupported_context(assign)
+            # Final context check
+            ctx_reason = _is_unsupported_context(target_node)
             if ctx_reason:
                 result.per_issue.append(SecretFixResult(
                     outcome="REFUSED", issue_id=issue_id, line=line,
-                    reason=REASON_UNSUPPORTED_CONTEXT,
-                    message=f"Line {line}: {ctx_reason}",
+                    reason=ctx_reason,
+                    message=f"Line {line} refused: {ctx_reason}",
                 ))
                 continue
 
-            # ── Compute patch ─────────────────────────────────────
-            # Rewrite the value portion using column offsets
+            # Compute patch
             line_idx = line - 1
             original_line = source_lines[line_idx]
+            col_start = value_node.col_offset
+            col_end = getattr(value_node, 'end_col_offset', None)
 
-            col_start = assign.value.col_offset
-            col_end = assign.value.end_col_offset
+            if col_end is None:
+                result.per_issue.append(SecretFixResult(
+                    outcome="FAILED", issue_id=issue_id, line=line,
+                    reason=REASON_NODE_NOT_FOUND,
+                    message="Missing column end offset.",
+                ))
+                continue
+
             replacement = f'os.environ["{env_var_name}"]'
             patched_line = original_line[:col_start] + replacement + original_line[col_end:]
 
-            # Check for duplicate patch on same line (e.g. two issues on same line)
             already_patched = any(p[0] == line_idx for p in patches)
             if already_patched:
                 result.per_issue.append(SecretFixResult(
@@ -521,39 +515,37 @@ class SecretFixer:
                 ))
                 continue
 
-            patches.append((line_idx, patched_line))
+            trunc = issue.get("truncated_secret", "***")
+            safe_line = original_line[:col_start] + f'"{trunc}"' + original_line[col_end:]
+
+            patches.append((line_idx, patched_line, safe_line))
             result.per_issue.append(SecretFixResult(
                 outcome="SUCCESS", issue_id=issue_id, line=line,
                 env_var_name=env_var_name,
                 message=f'Replaced with os.environ["{env_var_name}"].',
             ))
 
-        # ── Apply all patches ───────────────────────────────────────
-
         if not patches:
             return result
 
-        # Sort patches by line index descending (bottom-to-top)
-        # so earlier patches don't shift later line numbers.
         patches.sort(key=lambda p: p[0], reverse=True)
-
         patched_lines = list(source_lines)
-        for line_idx, patched_line in patches:
+        safe_lines = list(source_lines)
+        for line_idx, patched_line, safe_line in patches:
             patched_lines[line_idx] = patched_line
+            safe_lines[line_idx] = safe_line
 
-        # Insert `import os` once (if needed)
         if not _has_import_os(tree):
             insert_at = _find_import_insert_line(tree)
             patched_lines.insert(insert_at, "import os")
+            safe_lines.insert(insert_at, "") 
 
         fixed_code = "\n".join(patched_lines)
-
-        # ── Final syntax validation ─────────────────────────────────
+        safe_code = "\n".join(safe_lines)
 
         try:
             ast.parse(fixed_code)
         except SyntaxError as e:
-            # Mark ALL SUCCESS outcomes as FAILED
             for r in result.per_issue:
                 if r.outcome == "SUCCESS":
                     r.outcome = "FAILED"
@@ -562,5 +554,6 @@ class SecretFixer:
             return result
 
         result.fixed_code = fixed_code
+        result.safe_code = safe_code
         result.any_fixed = True
         return result

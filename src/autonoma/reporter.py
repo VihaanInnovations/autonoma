@@ -6,11 +6,12 @@ Deterministic ordering guaranteed.
 """
 import json
 import sys
+from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import TextIO
 
 from . import __version__
-from .engine import AnalysisReport
+from .engine import AnalysisReport, DetectReport
 from .history import HistoryReport
 
 
@@ -192,11 +193,12 @@ def report_history_json(report: HistoryReport, out: TextIO = None):
 
     payload = {
         "schema_version": SCHEMA_VERSION,
-        "autonoma_version": __version__,
-        "timestamp": _utc_iso(),
+        "tool_name": "autonoma",
+        "tool_version": __version__,
+        "generated_at": _utc_iso(),
         "summary": {
             "commits_scanned": report.commits_scanned,
-            "secrets_found": report.total_findings,
+            "total_findings": report.total_findings,
         },
         "findings": findings_list,
     }
@@ -221,16 +223,17 @@ def report_json(report: AnalysisReport, out: TextIO = None, fix_outcomes: list =
 
     payload = {
         "schema_version": SCHEMA_VERSION,
-        "autonoma_version": __version__,
-        "timestamp": _utc_iso(),
+        "tool_name": "autonoma",
+        "tool_version": __version__,
+        "generated_at": _utc_iso(),
         "summary": {
             "files_scanned": report.files_scanned,
             "files_skipped": report.files_skipped,
-            "total_issues": report.total_issues,
+            "total_findings": report.total_issues,
             "high_count": report.high_count,
         },
         "rules": rules_block,
-        "issues": report.all_issues,
+        "findings": report.all_issues,
     }
 
     if fix_outcomes is not None:
@@ -259,6 +262,13 @@ def report_json(report: AnalysisReport, out: TextIO = None, fix_outcomes: list =
             payload["dry_run"] = True
 
     out.write(json.dumps(payload, indent=2))
+    out.write("\n")
+
+
+def report_detect_json(report: DetectReport, out: TextIO = None):
+    """Print detect-only machine-readable JSON report to stdout."""
+    out = out or sys.stdout
+    out.write(json.dumps(asdict(report), indent=2))
     out.write("\n")
 
 
@@ -334,5 +344,3 @@ def report_fix_outcomes(outcomes: list, fmt: str = "text", out: TextIO = None,
     # Hint for env contract if any were refused for that reason
     if any(o.reason == "env_var_contract_not_found" for o in outcomes):
         out.write(f"\n{_Colors.CYAN}Hint: add a .env.example to enable safe remediation{_Colors.RESET}\n")
-
-
