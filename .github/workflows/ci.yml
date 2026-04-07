@@ -45,15 +45,29 @@ jobs:
         run: autonoma --help
 
       - name: Scan demo-project (text)
-        run: autonoma analyze demo-project/src --verbose
+        # Expected exit code 1 because findings exist
+        run: autonoma scan demo-project/src || if [ $? -eq 1 ]; then echo "Findings detected as expected"; else exit 1; fi
+        shell: bash
 
       - name: Scan demo-project (JSON)
-        run: autonoma analyze demo-project/src --format json
+        # Scan always outputs JSON now, no format flag needed
+        run: autonoma scan demo-project/src || if [ $? -eq 1 ]; then echo "JSON findings detected"; else exit 1; fi
+        shell: bash
 
-      - name: Dry-run auto-fix
-        run: autonoma analyze demo-project/src --dry-run
+      - name: Dry-run fix
+        # Use modern 'fix' command with --diff
+        run: autonoma fix demo-project/src --diff --dry-run
+        shell: bash
 
-      - name: Fail-on-findings exit code
+      - name: Verify exit code 1 on findings
+        # Confirm that findings lead to exit code 1
         run: |
-          autonoma analyze demo-project/src --fail-on-findings && exit 1 || echo "Exit code $? — correct (findings present)"
+          autonoma scan demo-project/src
+          if [ $? -eq 1 ]; then
+            echo "Correct: Exit code 1 on findings"
+            exit 0
+          else
+            echo "Error: Expected exit code 1"
+            exit 1
+          fi
         shell: bash
