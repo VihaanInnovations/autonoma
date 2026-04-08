@@ -1,4 +1,4 @@
 
-# Standard remediation targets (Dummy/Test formats)
-STRIPE_API_KEY = "sk_test_51Pz8xxxxxxxxxxxxxxxxxxxxxxxx0123456789"
-SENDGRID_API_KEY = "SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# Standard remediation targets (Safe)
+STRIPE_API_KEY = "demo_stripe_key_123"
+SENDGRID_API_KEY = "demo_sendgrid_key_456"

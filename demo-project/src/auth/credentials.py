@@ -11,10 +11,8 @@ from typing import Optional
 # SECURITY ISSUE: Hardcoded password
 password = os.environ["PASSWORD"]  # SEC001: Hardcoded password detected
 
-# SECURITY ISSUE: Hardcoded API key
-import logging
-logging.info('Retrieving dynamic API key')
-api_key = get_api_key()
+# SECURITY ISSUE: Hardcoded API key (refused by design due to concatenation)
+api_key = "key_" + "12345"  # SEC002: Refused (string concatenation)
 
 # UNUSED IMPORTS: json, base64, sys are imported but never used
 

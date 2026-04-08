@@ -12,11 +12,43 @@ from typing import Optional
 from auth.credentials import authenticate_user, get_api_key
 from api.user_service import UserService
 
-# LINT001: Console print statement (should use logging)
-# logging.info("Starting application...")  # Commented out console print statement
+# Testing class attribute remediation
+class Settings:
+    API_KEY = os.environ["API_KEY"]  # SEC002: Fixable (class attribute)
+
+# Real-world messy config with nested secrets
+DEV_CONFIG = {
+    "database": {
+        "host": "localhost",
+        "creds": {
+            "user": "admin",
+            "password": "nested_secret_value"  # SEC001: Refused (nested dict)
+        }
+    },
+    "retry_policy": {"max_attempts": 3}
+}
+
+# Testing keyword argument remediation in function calls
+def connect(db, password):
+    logging.info(f"Connecting to {db}...")
+
+connect(
+    db="prod", 
+    password=os.environ["PASSWORD"]
+)  # SEC001: Fixable (keyword arg)
 
 def main():
     """Main application function."""
+    
+    # Proving runtime awareness:
+    # 1. This is a dynamic lookup (SHOULD BE IGNORED)
+    dynamic_pass = get_api_key()
+    
+    # 2. This is a hardcoded secret in a call (SHOULD BE DETECTED BUT REFUSED)
+    def authorize(token, context):
+        logging.info(f"Authorizing {context}...")
+    
+    authorize("hardcoded_secret_token", context="demo")
     
     # SECURITY ISSUE: Hardcoded password
     admin_password = os.environ["ADMIN_PASSWORD"]  # SEC001: Hardcoded password

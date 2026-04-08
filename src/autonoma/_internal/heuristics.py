@@ -48,7 +48,7 @@ class HeuristicsEngine:
             # --- Python-only patterns ---
             {
                 "id": "SEC001",
-                "pattern": r"\w*[Pp]assword\w*\s*=\s*['\"][^'\"]+['\"]",
+                "pattern": r"['\"]?\w*[Pp]assword\w*['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
                 "message": "Hardcoded password detected.",
                 "type": "security",
                 "severity": "high",
@@ -57,7 +57,7 @@ class HeuristicsEngine:
             },
             {
                 "id": "SEC002",
-                "pattern": r"api_key\s*=\s*['\"][^'\"]+['\"]",
+                "pattern": r"['\"]?api_key['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
                 "message": "Hardcoded API key detected.",
                 "type": "security",
                 "severity": "high",
@@ -66,7 +66,7 @@ class HeuristicsEngine:
             },
             {
                 "id": "SEC002",
-                "pattern": r"(secret|token|auth_token|api_secret)\s*=\s*['\"][^'\"]+['\"]",
+                "pattern": r"['\"]?(secret|token|auth_token|api_secret)['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
                 "message": "Hardcoded secret/token detected.",
                 "type": "security",
                 "severity": "high",
@@ -196,10 +196,12 @@ class HeuristicsEngine:
                             if self._is_already_safe(line):
                                 continue
 
-                            # Extract var name and skip metadata variables
+                            # Extract var name and strip quotes
                             matched_text = match.group(0)
-                            parts = matched_text.split("=", 1)
+                            parts = re.split(r'[:=]', matched_text, 1)
                             var_part = parts[0].strip()
+                            if len(var_part) >= 2 and var_part[0] in ("'", '"') and var_part[-1] == var_part[0]:
+                                var_part = var_part[1:-1]
                             
                             # Extract the raw secret value and strip quotes
                             secret_val_part = parts[1].strip() if len(parts) > 1 else ""
