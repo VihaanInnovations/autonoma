@@ -20,6 +20,8 @@ Works alongside tools like gitleaks:
 
 >> Gitleaks finds secrets. Autonoma fixes them.
 
+![Autonoma Demo](docs/Animation.gif)
+
 ---
 
 ## What problem this solves
