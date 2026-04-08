@@ -6,11 +6,40 @@
 ![Edition](https://img.shields.io/badge/Edition-Community-orange)
 ![PyPI Version](https://img.shields.io/pypi/v/autonoma-cli)
 
-**AST-based detection and safe remediation of hardcoded secrets in Python.**
+Hardcoded secrets get detected. They rarely get fixed safely.
 
-Autonoma is a remediation layer that works alongside scanners like gitleaks. It scans your codebase for secrets and applies AST-based transformations to pivot them to environment variables safely. **Autonoma never rewrites code unless the transformation is provably safe. All uncertain cases are refused.**
+**Autonoma is a local, deterministic remediation layer for Python.**  
+It scans for hardcoded secrets and rewrites them to `os.environ[...]` using AST transformations.
+
+-   No regex rewriting
+-   No network calls
+-   No guessing
+-   Refuses unsafe transformations
+
+Works alongside tools like gitleaks:
+
+>> Gitleaks finds secrets. Autonoma fixes them.
 
 ---
+
+## What problem this solves
+
+Hardcoded secrets in codebases:
+- leak credentials into repositories and logs
+- break CI/CD security guarantees
+- require manual, error-prone cleanup
+
+Most tools detect them.  
+Autonoma removes them **only when it can prove the rewrite is safe**.
+
+---
+
+## Quick example
+
+```bash
+autonoma scan .
+autonoma fix .
+git diff
 
 ## Installation
 
@@ -18,10 +47,7 @@ Autonoma is a remediation layer that works alongside scanners like gitleaks. It 
 pip install autonoma-cli
 ```
 
----
-
-## Pre-commit Integration
-
+### Pre-commit Integration
 Add this to your `.pre-commit-config.yaml` to ensure no secrets are committed:
 
 ```yaml
@@ -43,11 +69,13 @@ Autonoma provides the following CLI commands:
 ### scan
 Detection mode. Outputs JSON to `stdout` and human-readable summaries to `stderr`. Ideal for CI.
 
+```bash
 # Scan a directory (outputs JSON findings to stdout)
 autonoma scan src/
 
 # To save JSON results to a file
 autonoma scan src/ > findings.json
+```
 
 ### fix
 Remedies hardcoded secrets. Applies AST rewrites and generates audit logs.
@@ -102,7 +130,7 @@ SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
 
 ---
 
-## CI/CD Integration
+## Integration & CI/CD
 
 ### GitHub Actions (Scan Only)
 To fail your build if any secrets are detected:
@@ -120,7 +148,6 @@ To fail your build if any secrets are detected:
 ---
 
 ## Legacy Commands
-
 `analyze` is retained for backwards compatibility. We recommend migrating to `scan` or `fix`.
 
 ```bash

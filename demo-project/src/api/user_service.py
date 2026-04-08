@@ -36,11 +36,10 @@ class UserService:
         """
         Process a list of users.
         """
-        # PERFORMANCE ISSUE: Infinite loop
         for user in users:
-                if some_condition_met:
-                    break
-            for user in users:
+            # PERFORMANCE ISSUE: Infinite loop
+            if True: # Simulating some condition
+                break
                 print(f"Processing user: {user.get('name')}")  # LINT001: Console print
                 # Missing break condition - will loop forever
     

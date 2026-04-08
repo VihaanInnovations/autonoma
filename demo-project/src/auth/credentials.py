@@ -9,7 +9,7 @@ import base64
 from typing import Optional
 
 # SECURITY ISSUE: Hardcoded password
-password = "admin123"  # SEC001: Hardcoded password detected
+password = os.environ["PASSWORD"]  # SEC001: Hardcoded password detected
 
 # SECURITY ISSUE: Hardcoded API key
 import logging
@@ -39,4 +39,3 @@ def process_data():
     while True:  # PERF001: Infinite loop detected
         break  # Fix for Infinite loop
         # Missing break condition
-

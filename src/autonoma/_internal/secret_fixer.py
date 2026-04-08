@@ -110,6 +110,8 @@ def _extract_var_name(target: ast.expr) -> Optional[str]:
     """
     if isinstance(target, ast.Name):
         return target.id
+    if isinstance(target, ast.Attribute):
+        return target.attr
     if isinstance(target, ast.Subscript):
         if isinstance(target.value, ast.Attribute):
             if (isinstance(target.value.value, ast.Name)
