@@ -16,7 +16,15 @@
 
 ---
 
----
+## What problem this solves
+
+Hardcoded secrets in codebases:
+- secrets get committed and stay in git history
+- fixing them manually breaks code or misses edge cases
+- teams detect leaks but avoid auto-fix tools because they are unsafe
+
+Most tools detect them.  
+Autonoma fixes them **only when it can prove the rewrite is safe**.
 
 ---
 
@@ -118,23 +126,27 @@ SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
 
 ---
 
-## CI Behavior
+---
 
-Autonoma is designed for safe, repeatable execution in pipelines.
+## CI/CD Features
 
-### First Run
-- Scans the codebase and fixes all **provably safe** secrets.
-- Replaces values with `os.environ` calls and adds necessary imports.
-- Exits with **code 1** if any findings (fixed or unfixable) are detected.
+- **Idempotent**: Zero changes after the first pass.
+- **Minimal Diff**: Preserves original formatting and comments.
+- **Import-aware**: Handles namespace collisions and existing imports automatically.
 
-### Subsequent Runs (Idempotent)
-- **Zero Diff**: No changes are made to already-remediated code.
-- **Reporting**: Only reports unresolved/unsafe cases that require manual review.
-- **Stable CI**: Guarantees that the tool won't create "churn" or noise in your git history.
+## Integration & CI/CD
+
+### GitHub Actions (Scan Only)
+To fail your build if any secrets are detected:
+
+```yaml
+- name: Scan for secrets
+  run: autonoma scan .
+```
 
 ### Exit Codes:
 - `0`: No findings.
-- `1`: Findings detected (even if they were auto-fixed).
+- `1`: Findings detected (even if unfixable).
 - `2+`: Tool/Runtime error.
 
 ---
@@ -170,16 +182,6 @@ Refused cases are reported and will cause non-zero exit codes in CI.
 - It does not use entropy/guessing (it uses heuristic name matching).
 - It does not modify non-Python files in the Community Edition.
 - It does not delete your code; backups are written as `<file>.bak` before modification.
-
----
-
-## When NOT to use Autonoma
-
-Adding a remediation tool requires trust. Autonoma is **not** a replacement for general secret scanners:
-
-- **Entropy-based detection**: If you need to find random strings that *might* be secrets, use **Gitleaks** or **TruffleHog**. Autonoma focuses on deterministic remediation of identified patterns.
-- **Aggressive auto-rewrites**: If you want a tool that "guesses" how to fix complex logic or multi-line concatenations, Autonoma will frustrate you. It prefers reporting a "Refusal" over breaking your production code.
-- **Non-Python languages**: The Community Edition is strictly **Python-only**.
 
 ---
 
