@@ -6,4 +6,4 @@ from importlib.metadata import version, PackageNotFoundError
 try:
     __version__ = version("autonoma-cli")
 except PackageNotFoundError:
-    __version__ = "0.1.4"
+    __version__ = "0.1.5"

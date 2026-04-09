@@ -192,7 +192,7 @@ Reports use a consistent top-level structure:
 {
   "schema_version": "1.0",
   "tool_name": "autonoma",
-  "tool_version": "0.1.4",
+  "tool_version": "0.1.5",
   "generated_at": "2026-03-24T12:00:00Z",
   "summary": {
     "total_findings": 1,

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.5
+
+Documentation overhaul and parser robustness improvements.
+
+### Added
+- **README Refinements**: Added "When NOT to use Autonoma" section to set strict technical boundaries.
+- **CI Lifecycle Behavior**: Expanded documentation to articulate the idempotent execution model across CI iterations.
+- **Visual Demo**: Integrated Animation.gif into documentation root to demonstrate behavior visually.
+
+### Changed
+- **Test Secrets**: Obfuscated remediation targets to avoid triggering GitHub repository push protection rules (GH013).
+- **Documentation**: Aggressively streamlined README.md for engineering audiences by cutting duplicate safety assertions.
+
+### Fixed
+- **Heuristics Parser**: Defaulting to `None` instead of empty strings when parsing secret values to prevent false matches.
+
+---
+
 ## 0.1.4
 
 Release featuring pre-commit integration and safe remediation enhancements.
