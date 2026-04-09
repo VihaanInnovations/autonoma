@@ -6,19 +6,11 @@
 ![Edition](https://img.shields.io/badge/Edition-Community-orange)
 ![PyPI Version](https://img.shields.io/pypi/v/autonoma-cli)
 
-Hardcoded secrets get detected. They rarely get fixed safely.
+**Autonoma safely remediates hardcoded secrets by rewriting them to environment variables.** Using AST transformations instead of regex, it applies changes only when they are provably semantic-preserving.
 
-**Autonoma is a local, deterministic remediation layer for Python.**  
-It scans for hardcoded secrets and rewrites them to `os.environ[...]` using AST transformations.
-
--   No regex rewriting
--   No network calls
--   No guessing
--   Refuses unsafe transformations
-
-Works alongside tools like gitleaks:
-
->> Gitleaks finds secrets. Autonoma fixes them.
+- **AST-Based**: Semantic-preserving rewrites, not regex guesswork.
+- **Local & Private**: No network calls or external dependencies.
+- **CI/CD Ready**: Idempotent, minimal diffs, and zero-noise operation.
 
 ![Autonoma Demo](docs/Animation.gif)
 
@@ -27,12 +19,12 @@ Works alongside tools like gitleaks:
 ## What problem this solves
 
 Hardcoded secrets in codebases:
-- leak credentials into repositories and logs
-- break CI/CD security guarantees
-- require manual, error-prone cleanup
+- secrets get committed and stay in git history
+- fixing them manually breaks code or misses edge cases
+- teams detect leaks but avoid auto-fix tools because they are unsafe
 
 Most tools detect them.  
-Autonoma removes them **only when it can prove the rewrite is safe**.
+Autonoma fixes them **only when it can prove the rewrite is safe**.
 
 ---
 
@@ -43,6 +35,8 @@ autonoma scan .
 autonoma fix .
 git diff
 
+```
+
 ## Installation
 
 ```bash
@@ -50,7 +44,7 @@ pip install autonoma-cli
 ```
 
 ### Pre-commit Integration
-Add this to your `.pre-commit-config.yaml` to ensure no secrets are committed:
+Add this to your `.pre-commit-config.yaml` to prevent secrets from entering your history:
 
 ```yaml
 - repo: local
@@ -115,7 +109,7 @@ DATABASES = {
         "PASSWORD": "Pr0d@ccess2024!",  # SEC001
     }
 }
-SENDGRID_API_KEY = "SG.xYz123_real_key_value_9fj3K"  # SEC002
+SENDGRID_API_KEY = "demo_sendgrid_key"  # SEC002
 ```
 
 ### After (`autonoma fix .`)
@@ -131,6 +125,14 @@ SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
 ```
 
 ---
+
+---
+
+## CI/CD Features
+
+- **Idempotent**: Zero changes after the first pass.
+- **Minimal Diff**: Preserves original formatting and comments.
+- **Import-aware**: Handles namespace collisions and existing imports automatically.
 
 ## Integration & CI/CD
 
@@ -162,9 +164,7 @@ autonoma analyze src/ --auto-fix
 
 ---
 
-## Safety & Constraints
-
-Autonoma prioritizes safety. It only rewrites code when it can prove the transformation is semantic-preserving.
+## Constraints & Behaviors
 
 ### What it remediates
 - Simple assignments: `API_KEY = "secret"`
@@ -179,7 +179,7 @@ Autonoma prioritizes safety. It only rewrites code when it can prove the transfo
 Refused cases are reported and will cause non-zero exit codes in CI.
 
 ### What it does not do
-- It does not "guess" secrets using entropy (it uses heuristic name matching).
+- It does not use entropy/guessing (it uses heuristic name matching).
 - It does not modify non-Python files in the Community Edition.
 - It does not delete your code; backups are written as `<file>.bak` before modification.
 
