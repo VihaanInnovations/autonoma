@@ -37,6 +37,9 @@ Thumbs.db
 # Auto-fix backups
 *.bak
 
+# Internal AI prompts
+prompt.txt
+
 # Test output artifacts
 **/evidence.csv
 **/evidence.json

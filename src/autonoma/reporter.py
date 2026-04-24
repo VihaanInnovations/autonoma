@@ -152,7 +152,7 @@ def report_history_text(report: HistoryReport, verbose: bool = False, quiet: boo
 
     if report.findings:
         if not quiet:
-            out.write(f"\n{_Colors.BOLD}=== Leaked Secrets Found in History ==={_Colors.RESET}\n")
+            out.write(f"\n{_Colors.BOLD}=== Secrets Found in Git History ==={_Colors.RESET}\n")
         
         for finding in report.findings:
             color = _severity_color(finding.severity)
@@ -160,7 +160,7 @@ def report_history_text(report: HistoryReport, verbose: bool = False, quiet: boo
             out.write(f"Commit: {finding.commit_hash[:7]} (Date: {finding.author_date})\n")
             out.write(f"File:   {finding.file}:{finding.line_number}\n")
             out.write(f"Secret: {color}{finding.rule_id}{_Colors.RESET} ({finding.message})\n")
-            out.write(f"Status: {_Colors.RED}leaked in history{_Colors.RESET}\n")
+            out.write(f"Status: {_Colors.RED}present in history{_Colors.RESET}\n")
             
 
     if quiet:
@@ -252,6 +252,8 @@ def report_json(report: AnalysisReport, out: TextIO = None, fix_outcomes: list =
                 entry["reason"] = o.reason
             if o.env_var:
                 entry["env_var"] = o.env_var
+            if o.decision_trace:
+                entry["decision_trace"] = o.decision_trace
             entries.append(entry)
 
         payload["summary"]["fixed"] = counts["FIXED"]

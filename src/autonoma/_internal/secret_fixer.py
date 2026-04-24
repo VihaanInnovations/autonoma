@@ -203,7 +203,26 @@ def _has_import_os(tree: ast.Module) -> bool:
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name == 'os':
+                if alias.name == 'os' and not alias.asname:
+                    return True
+    return False
+
+def _is_os_shadowed(tree: ast.Module) -> bool:
+    """Check if 'os' is shadowed by an assignment, function, class, or import alias."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for t in node.targets:
+                if isinstance(t, ast.Name) and t.id == 'os':
+                    return True
+        elif isinstance(node, ast.AnnAssign):
+            if isinstance(node.target, ast.Name) and node.target.id == 'os':
+                return True
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name == 'os':
+                return True
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            for alias in node.names:
+                if alias.asname == 'os':
                     return True
     return False
 
@@ -229,58 +248,6 @@ def _find_import_insert_line(tree: ast.Module) -> int:
     return 0
 
 
-# Env contract
-
-class _EnvContractChecker:
-    def __init__(self, repo_path: Optional[Path]):
-        self.repo_path = repo_path
-        self._checked = False
-        self._result = False
-
-    def has_contract(self) -> bool:
-        if self._checked:
-            return self._result
-        self._checked = True
-        self._result = self._check()
-        return self._result
-
-    def _check(self) -> bool:
-        if not self.repo_path or not self.repo_path.exists():
-            return False
-        try:
-            for name in ('.env', '.env.example', '.env.sample', '.env.local'):
-                if (self.repo_path / name).exists():
-                    return True
-
-            req = self.repo_path / 'requirements.txt'
-            if req.exists():
-                text = req.read_text(encoding='utf-8', errors='ignore')
-                if 'python-dotenv' in text or 'dotenv' in text:
-                    return True
-
-            pkg = self.repo_path / 'package.json'
-            if pkg.exists():
-                text = pkg.read_text(encoding='utf-8', errors='ignore')
-                if 'dotenv' in text:
-                    return True
-
-            for root, dirs, files in os.walk(self.repo_path):
-                dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', 'node_modules', 'venv', '.venv'}]
-                for fname in files:
-                    if fname.endswith(('.py',)):
-                        try:
-                            fpath = Path(root) / fname
-                            with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
-                                head = ''.join(f.readline() for _ in range(100))
-                            if 'os.getenv' in head or 'os.environ' in head:
-                                return True
-                        except Exception:
-                            continue
-        except Exception as e:
-            logger.debug(f"Error checking env contract: {e}")
-        return False
-
-
 # Main fixer
 
 class SecretFixer:
@@ -288,10 +255,6 @@ class SecretFixer:
 
     def __init__(self, repo_path: Optional[Path] = None):
         self.repo_path = repo_path
-        self._env_checker = _EnvContractChecker(repo_path)
-
-    def check_env_contract(self) -> bool:
-        return self._env_checker.has_contract()
 
     def fix_file(
         self,
@@ -325,16 +288,6 @@ class SecretFixer:
                 ))
             return result
 
-        if not self.check_env_contract():
-            for issue in issues:
-                result.per_issue.append(SecretFixResult(
-                    outcome="REFUSED", issue_id=issue.get("id", ""),
-                    line=issue.get("line"),
-                    reason=REASON_ENV_CONTRACT_MISSING,
-                    message="No environment contract found",
-                ))
-            return result
-
         try:
             tree = ast.parse(code)
         except SyntaxError as e:
@@ -344,6 +297,16 @@ class SecretFixer:
                     line=issue.get("line"),
                     reason=REASON_PARSE_FAILED,
                     message=f"Cannot parse source: {e}",
+                ))
+            return result
+
+        if _is_os_shadowed(tree):
+            for issue in issues:
+                result.per_issue.append(SecretFixResult(
+                    outcome="REFUSED", issue_id=issue.get("id", ""),
+                    line=issue.get("line"),
+                    reason="refuse_os_shadowed",
+                    message="The 'os' module is shadowed. Unsafe to use os.environ.",
                 ))
             return result
 
@@ -373,9 +336,9 @@ class SecretFixer:
             target_node = _find_target_node_at_line(tree, line)
             if target_node is None:
                 result.per_issue.append(SecretFixResult(
-                    outcome="FAILED", issue_id=issue_id, line=line,
-                    reason=REASON_NODE_NOT_FOUND,
-                    message=f"No target node found at line {line}.",
+                    outcome="REFUSED", issue_id=issue_id, line=line,
+                    reason=REASON_UNSUPPORTED_NODE_TYPE,
+                    message=f"Target at line {line} is inside a complex data structure (safely refused).",
                 ))
                 continue
 

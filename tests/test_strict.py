@@ -48,8 +48,18 @@ VERDICT_FAIL = "FAIL"
 # Helpers
 # ---------------------------------------------------------------------------
 
-def run(target: str, args: List[str] = None) -> Tuple[int, str, float]:
-    cmd = AUTONOMA + ["analyze", target] + (args or [])
+def run_scan(target: str, args: List[str] = None) -> Tuple[int, str, float]:
+    """Run `autonoma scan` (detect-only, always outputs JSON to stdout)."""
+    cmd = AUTONOMA + ["scan", target] + (args or [])
+    t0 = time.perf_counter()
+    r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                       text=True, timeout=TIMEOUT)
+    return r.returncode, r.stdout, time.perf_counter() - t0
+
+
+def run_fix(target: str, args: List[str] = None) -> Tuple[int, str, float]:
+    """Run `autonoma fix` (mutating). Pass ['--json'] for machine-readable output."""
+    cmd = AUTONOMA + ["fix", target] + (args or [])
     t0 = time.perf_counter()
     r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                        text=True, timeout=TIMEOUT)
@@ -136,7 +146,7 @@ def rule_1_no_traceback(g: Gate, tmp: Path):
         d = tmp / "r1" / name
         d.mkdir(parents=True)
         gen(d)
-        code, out, _ = run(str(d))
+        code, out, _ = run_scan(str(d))
         g.rule(f"[{name}] no traceback", "Traceback" not in out,
                out[out.index("Traceback"):out.index("Traceback")+200] if "Traceback" in out else "")
 
@@ -144,14 +154,14 @@ def rule_1_no_traceback(g: Gate, tmp: Path):
     bench = tmp / "r1" / "bench"
     bench.mkdir(parents=True)
     gen_seeded_benchmark(bench)
-    code, out, _ = run(str(bench))
+    code, out, _ = run_scan(str(bench))
     g.rule("[benchmark] no traceback", "Traceback" not in out)
 
     # Ugly repo
     ugly = tmp / "r1" / "ugly"
     ugly.mkdir(parents=True)
     gen_ugly_repo(ugly)
-    code, out, _ = run(str(ugly))
+    code, out, _ = run_scan(str(ugly))
     g.rule("[ugly] no traceback", "Traceback" not in out)
 
 
@@ -170,7 +180,7 @@ def rule_2_no_syntax_break(g: Gate, tmp: Path):
     fix = tmp / "r2" / "fix"
     shutil.copytree(src, fix)
 
-    run(str(fix), ["--auto-fix"])
+    run_fix(str(fix))
 
     comp = subprocess.run(
         [sys.executable, "-m", "compileall", "-q", str(fix)],
@@ -196,7 +206,7 @@ def rule_2_no_syntax_break(g: Gate, tmp: Path):
     generate_repo(synth_src, 3000, inject_secrets=10, inject_safe=5, inject_unsupported=3)
     synth_fix = tmp / "r2" / "synth_fix"
     shutil.copytree(synth_src, synth_fix)
-    run(str(synth_fix), ["--auto-fix"])
+    run_fix(str(synth_fix))
 
     comp2 = subprocess.run(
         [sys.executable, "-m", "compileall", "-q", str(synth_fix)],
@@ -218,18 +228,13 @@ def rule_3_deterministic(g: Gate, tmp: Path):
     synth = tmp / "r3" / "synth"
     generate_repo(synth, 3000, inject_secrets=10, inject_safe=5, inject_unsupported=3)
 
-    texts = []
     jsons = []
     for _ in range(3):
-        _, out_t, _ = run(str(synth))
-        texts.append(out_t)
-        _, out_j, _ = run(str(synth), ["--format", "json"])
-        d = parse_json(out_j)
-        if d: d.pop("timestamp", None)
-        jsons.append(json.dumps(d, sort_keys=True) if d else out_j)
+        _, out, _ = run_scan(str(synth))
+        d = parse_json(out)
+        if d: d.pop("generated_at", None)
+        jsons.append(json.dumps(d, sort_keys=True) if d else out)
 
-    g.rule("text output identical x3", len(set(texts)) == 1,
-           f"{len(set(texts))} distinct outputs")
     g.rule("json output identical x3", len(set(jsons)) == 1,
            f"{len(set(jsons))} distinct outputs")
 
@@ -250,11 +255,11 @@ def rule_4_no_duplicate_rewrite(g: Gate, tmp: Path):
     shutil.copytree(src, work)
 
     # First fix
-    run(str(work), ["--auto-fix"])
+    run_fix(str(work))
     after_first = hashes(work)
 
     # Second fix
-    _, out2, _ = run(str(work), ["--auto-fix", "--format", "json"])
+    _, out2, _ = run_fix(str(work), ["--json"])
     after_second = hashes(work)
 
     changes = {k for k in after_first if after_first.get(k) != after_second.get(k)}
@@ -293,9 +298,9 @@ def rule_4_no_duplicate_rewrite(g: Gate, tmp: Path):
     synth_w = tmp / "r4" / "synth_w"
     shutil.copytree(synth, synth_w)
 
-    run(str(synth_w), ["--auto-fix"])
+    run_fix(str(synth_w))
     h1 = hashes(synth_w)
-    run(str(synth_w), ["--auto-fix"])
+    run_fix(str(synth_w))
     h2 = hashes(synth_w)
 
     ch = {k for k in h1 if h1.get(k) != h2.get(k)}
@@ -318,7 +323,7 @@ def rule_5_no_ignored_mutation(g: Gate, tmp: Path):
     shutil.copytree(src, fix)
 
     pre = hashes(fix)
-    run(str(fix), ["--auto-fix"])
+    run_fix(str(fix))
     post = hashes(fix)
 
     # already_safe.py must NOT change
@@ -330,7 +335,7 @@ def rule_5_no_ignored_mutation(g: Gate, tmp: Path):
     dry_dir = tmp / "r5" / "dry"
     shutil.copytree(src, dry_dir)
     pre_dry = hashes(dry_dir)
-    run(str(dry_dir), ["--dry-run"])
+    run_fix(str(dry_dir), ["--dry-run"])
     post_dry = hashes(dry_dir)
     g.rule("dry-run modifies zero files", pre_dry == post_dry,
            f"modified: {set(k for k in pre_dry if pre_dry.get(k) != post_dry.get(k))}")
@@ -349,26 +354,26 @@ def rule_6_no_hang(g: Gate, tmp: Path):
     # 3k LOC < 5s
     r3k = tmp / "r6" / "r3k"
     generate_repo(r3k, 3000, inject_secrets=10, inject_safe=5, inject_unsupported=3)
-    _, _, t3 = run(str(r3k))
+    _, _, t3 = run_scan(str(r3k))
     g.rule("3k LOC < 5s", t3 < 5.0, f"{t3:.2f}s")
 
     # 10k LOC < 20s
     r10k = tmp / "r6" / "r10k"
     generate_repo(r10k, 10000, inject_secrets=20, inject_safe=5, inject_unsupported=3)
-    _, _, t10 = run(str(r10k))
+    _, _, t10 = run_scan(str(r10k))
     g.rule("10k LOC < 20s", t10 < 20.0, f"{t10:.2f}s")
 
     # 30k LOC < 60s
     r30k = tmp / "r6" / "r30k"
     generate_repo(r30k, 30000, inject_secrets=40, inject_safe=5, inject_unsupported=3)
-    _, _, t30 = run(str(r30k))
+    _, _, t30 = run_scan(str(r30k))
     g.rule("30k LOC < 60s", t30 < 60.0, f"{t30:.2f}s")
 
     # Ugly repo with 200 files < 120s
     ugly = tmp / "r6" / "ugly"
     ugly.mkdir(parents=True)
     gen_ugly_repo(ugly)
-    _, _, tu = run(str(ugly))
+    _, _, tu = run_scan(str(ugly))
     g.rule("ugly repo < 120s", tu < 120.0, f"{tu:.2f}s")
 
 
@@ -403,7 +408,7 @@ def rule_7_no_unsafe_touch(g: Gate, tmp: Path):
     shutil.copytree(repo, fix_dir)
     pre = hashes(fix_dir)
 
-    _, out, _ = run(str(fix_dir), ["--auto-fix", "--format", "json"])
+    _, out, _ = run_fix(str(fix_dir), ["--json"])
     post = hashes(fix_dir)
 
     # already_safe.py must NOT change

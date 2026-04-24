@@ -2,9 +2,33 @@
 Autonoma — Tests for pre-commit hook mode
 """
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
 from autonoma.cli import pre_commit_cmd, cli
+
+
+def _git_add_mock(returncode: int) -> MagicMock:
+    m = MagicMock()
+    m.returncode = returncode
+    return m
+
+
+def _git_rev_parse_mock() -> MagicMock:
+    """Simulate git rev-parse returning non-zero (not a git repo) so
+    _find_project_root falls back to the start path without error."""
+    m = MagicMock()
+    m.returncode = 1
+    return m
+
+
+def _make_subprocess_side_effect(git_add_returncode: int):
+    """Return a side_effect for subprocess.run that routes git rev-parse calls
+    (issued by _find_project_root) separately from git add calls."""
+    def _side_effect(cmd, **kwargs):
+        if isinstance(cmd, list) and len(cmd) >= 2 and cmd[1] == "rev-parse":
+            return _git_rev_parse_mock()
+        return _git_add_mock(git_add_returncode)
+    return _side_effect
 
 
 def test_no_files_exits_0():
@@ -45,21 +69,56 @@ def test_non_python_file_exits_0(tmp_path: Path):
 
 
 def test_auto_fix_cleans_up(tmp_path: Path):
-    """With --auto-fix, fixable secrets should be fixed and exit 0."""
+    """With --auto-fix and no env contract, the fix is refused and git add is never called."""
     vuln = tmp_path / "vuln.py"
     vuln.write_text("API_KEY = 'ak_live_1234567890'\n")
+    # No .env.example — fixer refuses, git add must not be called
 
     runner = CliRunner()
-    with patch("subprocess.run") as mock_git_add:
+    with patch("subprocess.run", side_effect=_make_subprocess_side_effect(0)) as mock_sub:
         result = runner.invoke(pre_commit_cmd, [str(vuln), "--auto-fix"])
 
-    # Should fix and exit 0 (or 1 if REFUSED — depends on fixer logic)
-    # For SEC001 with a recognisable API key pattern, the fixer should fix it
-    if result.exit_code == 0:
-        # Verify git add was called to re-stage
-        mock_git_add.assert_called()
-    # If the fixer refused, exit 1 is also acceptable
-    assert result.exit_code in (0, 1)
+    git_add_calls = [c for c in mock_sub.call_args_list if c.args[0][:2] == ["git", "add"]]
+    assert git_add_calls == [], "git add must not be called when fix is refused"
+    assert result.exit_code == 1
+
+
+def test_auto_fix_restage_success(tmp_path: Path):
+    """Fixable secret + git add succeeds → exit 0, 'Fixed and re-staged' printed."""
+    vuln = tmp_path / "vuln.py"
+    vuln.write_text("password = 'supersecret'\n")
+    (tmp_path / ".env.example").write_text("PASSWORD=\n")
+
+    runner = CliRunner()
+    with patch("subprocess.run", side_effect=_make_subprocess_side_effect(0)) as mock_sub:
+        result = runner.invoke(pre_commit_cmd, [str(vuln), "--auto-fix"])
+
+    git_add_calls = [c for c in mock_sub.call_args_list if c.args[0][:2] == ["git", "add"]]
+    assert len(git_add_calls) == 1, f"expected exactly one git add call, got {git_add_calls}"
+    assert git_add_calls[0].args[0] == ["git", "add", str(vuln)]
+    assert git_add_calls[0].kwargs == {"capture_output": True}
+    assert result.exit_code == 0
+    assert "Fixed and re-staged" in result.output
+
+
+def test_auto_fix_restage_failure_blocks_commit(tmp_path: Path):
+    """Fixable secret + git add fails → exit 1, error message emitted, commit blocked."""
+    vuln = tmp_path / "vuln.py"
+    vuln.write_text("password = 'supersecret'\n")
+    (tmp_path / ".env.example").write_text("PASSWORD=\n")
+
+    runner = CliRunner()
+    with patch("subprocess.run", side_effect=_make_subprocess_side_effect(128)) as mock_sub:
+        result = runner.invoke(pre_commit_cmd, [str(vuln), "--auto-fix"])
+
+    git_add_calls = [c for c in mock_sub.call_args_list if c.args[0][:2] == ["git", "add"]]
+    assert len(git_add_calls) == 1, f"expected exactly one git add call, got {git_add_calls}"
+    assert result.exit_code == 1
+    # Error must appear in output — do not silently swallow the git add failure
+    assert "ERROR" in result.output
+    assert "git add failed" in result.output
+    # Must NOT claim the file was successfully re-staged
+    assert "Fixed and re-staged" not in result.output
 
 
 def test_multiple_files_mixed(tmp_path: Path):

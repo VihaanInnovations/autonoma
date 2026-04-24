@@ -4,6 +4,7 @@ Autonoma — Analysis Engine
 Orchestrates: gather files → scan each → collect results.
 Stateless, single-pass, deterministic.
 """
+import ast
 import os
 import fnmatch
 import concurrent.futures
@@ -27,7 +28,7 @@ SKIP_DIRS = {
 
 
 Severity = Literal["low", "medium", "high"]
-PatternType = Literal["password", "api_key", "token", "generic_secret", "unknown"]
+PatternType = Literal["password", "passwd", "api_key", "token", "generic_secret", "unknown", "parse_error"]
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,7 @@ class DetectFinding:
     rule_id: str
     fingerprint: str
     provider: Optional[str] = None
+    decision_trace: Optional[dict] = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +77,7 @@ class FileResult:
     issues: List[Dict[str, Any]] = field(default_factory=list)
     skipped: bool = False
     skip_reason: Optional[str] = None
+    parse_valid: bool = True  # False when the file failed AST parse (SyntaxError)
 
 
 @dataclass
@@ -190,6 +193,37 @@ class AnalysisEngine:
                 skipped=True,
                 skip_reason=str(e),
             )
+
+        # For Python files, detect parse failures before running the scanner.
+        # A SyntaxError makes structural rewriting unsafe, so we emit one
+        # synthetic PARSE_ERROR finding and skip further analysis of this file.
+        if file_path.suffix == ".py":
+            try:
+                ast.parse(content)
+            except SyntaxError as e:
+                synthetic_issue = {
+                    "id": "PARSE_ERROR",
+                    "line": e.lineno or 1,
+                    "col_offset": max(0, (e.offset or 1) - 1),
+                    "end_col_offset": None,
+                    "message": (
+                        "File contains a syntax error; "
+                        "safe structural rewrite cannot be proven."
+                    ),
+                    "type": "security",
+                    "severity": "high",
+                    "source": "parse_error",
+                    "pattern_type": "parse_error",
+                    "truncated_secret": None,
+                    "provider": None,
+                    "fingerprint": "sha256:parse_error",
+                }
+                return FileResult(
+                    file=rel_path,
+                    abs_path=str(file_path),
+                    issues=[synthetic_issue],
+                    parse_valid=False,
+                )
 
         issues = self._scanner.scan(content, str(file_path), disabled_rules)
 

@@ -156,7 +156,11 @@ class ASTEngine:
         
         check_name_lower = check_name.lower()
         is_password = any(k in check_name_lower for k in ['password', 'passwd', 'pwd'])
-        pattern_type = "password" if is_password else "api_key"
+        if is_password:
+            is_abbreviated = any(k in check_name_lower for k in ['passwd', 'pwd']) and 'password' not in check_name_lower
+            pattern_type = "passwd" if is_abbreviated else "password"
+        else:
+            pattern_type = "api_key"
         issue_id = "SEC001" if is_password else "SEC002"
 
         msg_target = f'os.environ["{original_name}"]' if is_environ else f"'{original_name}'"

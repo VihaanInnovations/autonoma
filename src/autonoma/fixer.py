@@ -1,12 +1,16 @@
 """Remediates SEC001/SEC002 issues in Python files."""
 import shutil
 import difflib
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 
 from ._internal.secret_fixer import SecretFixer, BatchFixResult
+from .policy import (
+    evaluate_finding_policy, PolicyInputs, DecisionTrace,
+    check_env_contract, default_confidence,
+)
 
 
 # Public output states
@@ -39,6 +43,7 @@ class FixOutcome:
     provider: Optional[str] = None
     fingerprint: Optional[str] = None
     timestamp: Optional[str] = None
+    decision_trace: Optional[dict] = None
 
 
 # Atomic write
@@ -53,21 +58,91 @@ def _atomic_write(file_path: Path, content: str) -> Path:
 
 # Public API
 
+def process_findings_with_policy(
+    code: str,
+    file_path: Path,
+    file: str,
+    issues: List[Dict[str, Any]],
+    repo_path: Path,
+    parse_valid: bool,
+    env_contract: bool,
+    write: bool,
+    finding_counter_start: int = 0,
+) -> Tuple[List["FixOutcome"], Optional[str], List[DecisionTrace]]:
+    """Single orchestration path: policy evaluation → fix execution for one file.
+
+    Guarantees policy always runs before any write. Returns outcomes, a unified
+    diff patch (if applicable), and the list of DecisionTrace objects in issue order.
+    """
+    traces: List[DecisionTrace] = []
+    for i, issue in enumerate(issues):
+        rule_id = issue.get("id", "")
+        pattern = issue.get("pattern_type", "unknown")
+        traces.append(evaluate_finding_policy(
+            finding_id=f"{rule_id}-{finding_counter_start + i + 1:04d}",
+            inputs=PolicyInputs(
+                file=file,
+                line=issue.get("line", 0),
+                rule_id=rule_id,
+                pattern=pattern,
+                confidence=default_confidence(rule_id, pattern),
+                parse_valid=parse_valid,
+                env_contract_exists=env_contract,
+                file_type=file_path.suffix,
+                single_literal_replacement=issue.get("single_literal_replacement", True),
+            ),
+        ))
+
+    outcomes, diff_patch = fix_file_issues(
+        code=code,
+        file_path=file_path,
+        issues=issues,
+        repo_path=repo_path,
+        write=write,
+        traces=traces,
+    )
+    return outcomes, diff_patch, traces
+
+
 def fix_file_issues(
     code: str,
     file_path: Path,
     issues: List[Dict[str, Any]],
     repo_path: Path,
     write: bool = True,
+    traces: Optional[List] = None,
 ) -> Tuple[List[FixOutcome], Optional[str]]:
-    """Batch-fix all issues for a single file."""
+    """Batch-fix all issues for a single file.
+
+    traces: optional list of DecisionTrace objects (one per issue, same order).
+    If provided, issues whose trace.final_action != 'preview_then_apply' are
+    refused before reaching SecretFixer.
+    """
     outcomes: List[FixOutcome] = []
     try:
         rel_file = str(file_path.relative_to(repo_path))
     except ValueError:
         rel_file = str(file_path)
 
+    # Policy must always run. If traces were not supplied, delegate to the
+    # canonical orchestration path rather than duplicating input construction.
+    if traces is None:
+        # A PARSE_ERROR finding signals the file could not be parsed safely.
+        parse_valid = not any(i.get("id") == "PARSE_ERROR" for i in issues)
+        outcomes, diff_patch, _ = process_findings_with_policy(
+            code=code,
+            file_path=file_path,
+            file=rel_file,
+            issues=issues,
+            repo_path=repo_path,
+            parse_valid=parse_valid,
+            env_contract=check_env_contract(repo_path),
+            write=write,
+        )
+        return outcomes, diff_patch
+
     # Filter: only HIGH severity SEC001/SEC002 go to the fixer.
+    # Policy gate: issues with final_action != "preview_then_apply" are refused here.
     # Everything else is SKIPPED immediately.
     fixable_issues = []
     fixable_indices = []
@@ -75,8 +150,25 @@ def fix_file_issues(
     for i, issue in enumerate(issues):
         issue_id = issue.get("id", "")
         severity = str(issue.get("severity", "")).lower()
+        trace = traces[i]
 
-        if issue_id not in ("SEC001", "SEC002"):
+        if trace.final_action == "block_with_reason":
+            # Policy hard-blocked this issue (e.g. parse failure, missing env contract).
+            # Refuse unconditionally regardless of rule_id or severity.
+            outcomes.append(FixOutcome(
+                state=REFUSED,
+                issue_id=issue_id,
+                file=rel_file,
+                line=issue.get("line"),
+                reason="policy_block",
+                message=trace.rationale,
+                truncated_secret=issue.get("truncated_secret"),
+                provider=issue.get("provider") or "Unknown",
+                fingerprint=issue.get("fingerprint", "sha256:unknown"),
+                timestamp=datetime.utcnow().isoformat() + "Z",
+                decision_trace=asdict(trace),
+            ))
+        elif issue_id not in ("SEC001", "SEC002"):
             outcomes.append(FixOutcome(
                 state=SKIPPED,
                 issue_id=issue_id,
@@ -88,6 +180,7 @@ def fix_file_issues(
                 provider=issue.get("provider", "Unknown"),
                 fingerprint=issue.get("fingerprint", "sha256:unknown"),
                 timestamp=datetime.utcnow().isoformat() + "Z",
+                decision_trace=asdict(trace),
             ))
         elif severity != "high":
             outcomes.append(FixOutcome(
@@ -101,6 +194,21 @@ def fix_file_issues(
                 provider=issue.get("provider", "Unknown"),
                 fingerprint=issue.get("fingerprint", "sha256:unknown"),
                 timestamp=datetime.utcnow().isoformat() + "Z",
+                decision_trace=asdict(trace),
+            ))
+        elif trace.final_action != "preview_then_apply":
+            outcomes.append(FixOutcome(
+                state=REFUSED,
+                issue_id=issue_id,
+                file=rel_file,
+                line=issue.get("line"),
+                reason="policy_block",
+                message=trace.rationale,
+                truncated_secret=issue.get("truncated_secret"),
+                provider=issue.get("provider", "Unknown"),
+                fingerprint=issue.get("fingerprint", "sha256:unknown"),
+                timestamp=datetime.utcnow().isoformat() + "Z",
+                decision_trace=asdict(trace),
             ))
         else:
             fixable_issues.append(issue)
@@ -129,6 +237,7 @@ def fix_file_issues(
                 provider=issue.get("provider", "Unknown"),
                 fingerprint=issue.get("fingerprint", "sha256:unknown"),
                 timestamp=datetime.utcnow().isoformat() + "Z",
+                decision_trace=asdict(traces[idx]),
             )
         return outcomes, None
 
@@ -150,6 +259,7 @@ def fix_file_issues(
             provider=issue.get("provider", "Unknown"),
             fingerprint=issue.get("fingerprint", "sha256:unknown"),
             timestamp=datetime.utcnow().isoformat() + "Z",
+            decision_trace=asdict(traces[idx]),
         )
 
     diff_patch = None

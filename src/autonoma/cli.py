@@ -10,12 +10,15 @@ just_fix_windows_console()
 
 import click
 
+from dataclasses import asdict as _dc_asdict
+
 from . import __version__
 from ._internal.heuristics import ALL_SUPPORTED_EXTENSIONS
 from .engine import AnalysisEngine, DetectFinding, DetectReport, DetectSummary
 from .history import HistoryEngine
-from .fixer import fix_file_issues, FixOutcome, FIXED, REFUSED, SKIPPED, FAILED
+from .fixer import fix_file_issues, process_findings_with_policy, FixOutcome, FIXED, REFUSED, SKIPPED, FAILED
 from .audit import generate_audit_log
+from .policy import check_env_contract
 from .reporter import (
     report_text, report_json, report_fix_outcomes,
     report_history_text, report_history_json, report_detect_json,
@@ -78,8 +81,12 @@ def _run_analyze_pipeline(
         # Auto-fix: batch per file
         all_outcomes = []
         all_diffs = []
+        # Traces keyed by (file, line, rule_id) — computed once, reused by detect_only block.
+        _all_traces: dict = {}
         if auto_fix and report.total_issues > 0:
             base_path = target.parent if target.is_file() else target
+            _fix_env_contract = check_env_contract(base_path)
+            _fix_finding_counter = 0
 
             for fr in sorted(report.file_results, key=lambda r: r.file):
                 if fr.skipped or not fr.issues:
@@ -104,15 +111,22 @@ def _run_analyze_pipeline(
                         ))
                     continue
 
-                # One call per file - batched internally
-                # dry_run -> write=False (preview only)
-                outcomes, diff_patch = fix_file_issues(
+                counter_start = _fix_finding_counter
+                _fix_finding_counter += len(fr.issues)
+
+                outcomes, diff_patch, file_traces = process_findings_with_policy(
                     code=code,
                     file_path=file_path,
+                    file=fr.file,
                     issues=fr.issues,
                     repo_path=base_path,
+                    parse_valid=fr.parse_valid,
+                    env_contract=_fix_env_contract,
                     write=not dry_run,
+                    finding_counter_start=counter_start,
                 )
+                for issue, trace in zip(fr.issues, file_traces):
+                    _all_traces[(fr.file, issue.get("line"), issue.get("id", ""))] = trace
                 all_outcomes.extend(outcomes)
                 if diff_patch and diff:
                     all_diffs.append(diff_patch)
@@ -143,19 +157,25 @@ def _run_analyze_pipeline(
                     found_outcome = next((o for o in all_outcomes if o.file == fr.file and o.line == issue.get("line") and o.issue_id == issue.get("id")), None)
                     if not found_outcome:
                         continue
-                    
+
+                    rule_id = issue.get("id", "")
+                    pattern_type = issue.get("pattern_type", "unknown")
+                    # Reuse trace computed in the auto_fix block above.
+                    trace = _all_traces.get((fr.file, issue.get("line"), rule_id))
+
                     detect_findings.append(DetectFinding(
                         file=fr.file,
                         line=issue.get("line"),
                         col=issue.get("col_offset"),
-                        pattern_type=issue.get("pattern_type", "unknown"),
+                        pattern_type=pattern_type,
                         severity=issue.get("severity", "medium"),
                         safe_to_fix=(found_outcome.state == "FIXED"),
                         refusal_reason=found_outcome.reason if found_outcome.state == "REFUSED" else None,
                         suggested_env_var=found_outcome.env_var if found_outcome.state == "FIXED" else None,
-                        rule_id=issue.get("id"),
+                        rule_id=rule_id,
                         fingerprint=found_outcome.fingerprint or "sha256:unknown",
-                        provider=issue.get("provider")
+                        provider=issue.get("provider"),
+                        decision_trace=_dc_asdict(trace) if trace else None,
                     ))
             
             # --- Summary to stderr ---
@@ -378,6 +398,8 @@ def pre_commit_cmd(files, auto_fix, include_ext, exclude, verbose, quiet, json_o
 
                 if auto_fix:
                     base_path = file_path.parent
+                    _pc_env_contract = check_env_contract(base_path)
+                    _pc_counter = 0
 
                     for fr in report.file_results:
                         if fr.skipped or not fr.issues:
@@ -391,12 +413,19 @@ def pre_commit_cmd(files, auto_fix, include_ext, exclude, verbose, quiet, json_o
                             blocked = True
                             continue
 
-                        outcomes, diff_patch = fix_file_issues(
+                        counter_start = _pc_counter
+                        _pc_counter += len(fr.issues)
+
+                        outcomes, diff_patch, _ = process_findings_with_policy(
                             code=code,
                             file_path=Path(fr.abs_path),
+                            file=fr.file,
                             issues=fr.issues,
                             repo_path=base_path,
+                            parse_valid=fr.parse_valid,
+                            env_contract=_pc_env_contract,
                             write=True,
+                            finding_counter_start=counter_start,
                         )
 
                         file_blocked = False
@@ -424,12 +453,19 @@ def pre_commit_cmd(files, auto_fix, include_ext, exclude, verbose, quiet, json_o
                             # All issues fixed — re-stage the file
                             any_fixed = any(o.state == FIXED for o in outcomes)
                             if any_fixed:
-                                subprocess.run(
+                                add_result = subprocess.run(
                                     ["git", "add", str(file_path)],
-                                    check=False,
                                     capture_output=True,
                                 )
-                                if not quiet:
+                                if add_result.returncode != 0:
+                                    blocked = True
+                                    click.echo(
+                                        f"ERROR: git add failed for {file_path.name} "
+                                        f"(exit {add_result.returncode}) — "
+                                        f"file was fixed on disk but is not staged.",
+                                        err=True,
+                                    )
+                                elif not quiet:
                                     click.echo(f"Fixed and re-staged: {file_path.name}")
                 else:
                     # No auto-fix: any issue blocks the commit

@@ -67,8 +67,18 @@ class Results:
             print(d)
 
 
-def run(repo: Path, args: List[str] = None) -> Tuple[int, str, float]:
-    cmd = AUTONOMA + ["analyze", str(repo)] + (args or [])
+def run_scan(repo: Path, args: List[str] = None) -> Tuple[int, str, float]:
+    """Run `autonoma scan` (detect-only, always outputs JSON to stdout)."""
+    cmd = AUTONOMA + ["scan", str(repo)] + (args or [])
+    t0 = time.perf_counter()
+    r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                       text=True, timeout=TIMEOUT)
+    return r.returncode, r.stdout, time.perf_counter() - t0
+
+
+def run_fix(repo: Path, args: List[str] = None) -> Tuple[int, str, float]:
+    """Run `autonoma fix` (mutating). Pass ['--json'] for machine-readable output."""
+    cmd = AUTONOMA + ["fix", str(repo)] + (args or [])
     t0 = time.perf_counter()
     r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                        text=True, timeout=TIMEOUT)
@@ -150,26 +160,20 @@ def test_stability(tmp_path: Path) -> Results:
     repos["synth_3k"] = synth
 
     for name, repo in repos.items():
-        text_runs = []
         json_runs = []
 
         for i in range(3):
-            code, out, _ = run(repo)
-            r.check(f"[{name}] run {i+1} exit 0", code == 0, f"exit {code}")
+            code, out, _ = run_scan(repo)
+            # exit 0 = clean, exit 1 = findings — both are valid non-crash exits
+            r.check(f"[{name}] run {i+1} no crash", code in (0, 1), f"exit {code}")
             r.check(f"[{name}] run {i+1} no traceback", "Traceback" not in out)
-            text_runs.append(out)
 
-            _, jout, _ = run(repo, ["--format", "json"])
-            d = parse_json(jout)
+            d = parse_json(out)
             if d:
-                d.pop("timestamp", None)
-            json_runs.append(json.dumps(d, sort_keys=True) if d else jout)
+                d.pop("generated_at", None)
+            json_runs.append(json.dumps(d, sort_keys=True) if d else out)
 
-        # All text runs identical
-        r.check(f"[{name}] text deterministic", len(set(text_runs)) == 1,
-                f"{len(set(text_runs))} distinct outputs")
-
-        # All JSON runs identical (minus timestamp)
+        # All scan runs must produce identical JSON (minus timestamp)
         r.check(f"[{name}] json deterministic", len(set(json_runs)) == 1,
                 f"{len(set(json_runs))} distinct outputs")
 
@@ -196,8 +200,8 @@ def test_safe_fix(tmp_path: Path) -> Results:
     pre = hashes(fix)
 
     # Run auto-fix
-    code, out, _ = run(fix, ["--auto-fix", "--format", "json"])
-    r.check("Auto-fix exit 0", code == 0, f"exit {code}")
+    code, out, _ = run_fix(fix, ["--json"])
+    r.check("Auto-fix exit 1 (findings were present)", code == 1, f"exit {code}")
     r.check("No traceback", "Traceback" not in out)
 
     post = hashes(fix)
@@ -252,7 +256,7 @@ def test_safe_fix(tmp_path: Path) -> Results:
     # Fix is deterministic: fix a second copy and compare
     fix2 = tmp_path / "fix_copy2"
     shutil.copytree(src, fix2)
-    run(fix2, ["--auto-fix"])
+    run_fix(fix2)
     post2 = hashes(fix2)
     r.check("Fix deterministic (two copies identical)", post == post2,
             f"mismatch: {set(k for k in post if post.get(k) != post2.get(k))}")
@@ -282,14 +286,14 @@ def test_idempotency(tmp_path: Path) -> Results:
         shutil.copytree(repo_src, work)
 
         # First fix
-        run(work, ["--auto-fix"])
+        run_fix(work)
         after_first = hashes(work)
 
-        # Second fix on already-fixed repo
-        code2, out2, _ = run(work, ["--auto-fix", "--format", "json"])
+        # Second fix on already-fixed repo — must be a no-op
+        code2, out2, _ = run_fix(work, ["--json"])
         after_second = hashes(work)
 
-        r.check(f"[{label}] second fix exit 0", code2 == 0, f"exit {code2}")
+        r.check(f"[{label}] second fix exit 0 (no more findings)", code2 == 0, f"exit {code2}")
 
         # Zero additional file changes
         changes = {k for k in after_first if after_first.get(k) != after_second.get(k)}
@@ -410,41 +414,37 @@ def setup():
                    f'"""File {i}."""\nval_{i} = {i}\n')
 
     # --- Run scan ---
-    code, out, elapsed = run(garbage)
+    code, out, elapsed = run_scan(garbage)
     r.check("Scan completes (no hang)", elapsed < 120, f"{elapsed:.2f}s")
     r.check("No traceback", "Traceback" not in out)
-    # We accept exit 0 or exit that's not a crash signal
     r.check("No crash signal", code in (0, 1), f"exit {code}")
 
-    # --- Run JSON ---
-    code_j, out_j, _ = run(garbage, ["--format", "json"])
-    r.check("JSON no traceback", "Traceback" not in out_j)
-    d = parse_json(out_j)
+    # scan always outputs JSON — verify it is parseable and reports files
+    d = parse_json(out)
     if d:
-        scanned = d.get("summary", {}).get("files_scanned", 0)
+        scanned = d.get("summary", {}).get("files_processed", 0)
         r.check(f"Scanned {scanned} files (>0)", scanned > 0)
     else:
         r.check("JSON parseable", d is not None, "invalid JSON")
 
-    # --- Run auto-fix (on copy) ---
+    # --- Run fix (on copy) ---
     fix = tmp_path / "garbage_fix"
     shutil.copytree(garbage, fix)
-    code_f, out_f, _ = run(fix, ["--auto-fix"])
-    r.check("Auto-fix no traceback", "Traceback" not in out_f)
-    r.check("Auto-fix no crash signal", code_f in (0, 1), f"exit {code_f}")
+    code_f, out_f, _ = run_fix(fix)
+    r.check("Fix no traceback", "Traceback" not in out_f)
+    r.check("Fix no crash signal", code_f in (0, 1), f"exit {code_f}")
 
     # No .py file should be deleted
     pre_files = set(str(p.relative_to(garbage)) for p in garbage.rglob("*.py"))
     post_files = set(str(p.relative_to(fix)) for p in fix.rglob("*.py"))
     r.check("No files deleted", pre_files.issubset(post_files))
 
-    # --- Run dry-run ---
-    code_d, out_d, _ = run(garbage, ["--dry-run"])
+    # --- Run fix --dry-run (must not modify any file) ---
+    code_d, out_d, _ = run_fix(garbage, ["--dry-run"])
     r.check("Dry-run no traceback", "Traceback" not in out_d)
 
-    # Verify dry-run didn't modify anything
     pre_h = hashes(garbage)
-    run(garbage, ["--dry-run"])
+    run_fix(garbage, ["--dry-run"])
     post_h = hashes(garbage)
     r.check("Dry-run zero modifications", pre_h == post_h)
 
@@ -479,20 +479,20 @@ def test_scale(tmp_path: Path) -> Results:
         # 3 runs, take median
         runs = []
         for _ in range(3):
-            code, out, elapsed = run(repo)
+            code, out, elapsed = run_scan(repo)
             runs.append(elapsed)
 
         median_t = sorted(runs)[1]
         timings.append((label, actual_files, actual_loc, median_t))
 
-        r.check(f"[{label}] exit 0", code == 0, f"exit {code}")
+        r.check(f"[{label}] no crash", code in (0, 1), f"exit {code}")
         r.check(f"[{label}] no traceback", "Traceback" not in out)
         r.check(f"[{label}] median {median_t:.3f}s", True)
 
-        # Auto-fix timing
+        # Fix timing
         fix_dir = tmp_path / "scale" / f"{label}_fix"
         shutil.copytree(repo, fix_dir)
-        _, _, fix_time = run(fix_dir, ["--auto-fix"])
+        _, _, fix_time = run_fix(fix_dir)
         r.check(f"[{label}] auto-fix {fix_time:.3f}s", True)
         shutil.rmtree(fix_dir, ignore_errors=True)
 

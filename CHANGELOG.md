@@ -2,16 +2,16 @@
 
 ## 0.1.5
 
-Documentation overhaul and parser robustness improvements.
+Documentation updates and parser reliability fixes.
 
 ### Added
 - **README Refinements**: Added "When NOT to use Autonoma" section to set strict technical boundaries.
-- **CI Lifecycle Behavior**: Expanded documentation to articulate the idempotent execution model across CI iterations.
+- **CI Lifecycle Behavior**: Documented idempotent behavior and exit code semantics for CI pipelines.
 - **Visual Demo**: Integrated Animation.gif into documentation root to demonstrate behavior visually.
 
 ### Changed
 - **Test Secrets**: Obfuscated remediation targets to avoid triggering GitHub repository push protection rules (GH013).
-- **Documentation**: Aggressively streamlined README.md for engineering audiences by cutting duplicate safety assertions.
+- **Documentation**: Removed duplicate safety explanations from README.md.
 
 ### Fixed
 - **Heuristics Parser**: Defaulting to `None` instead of empty strings when parsing secret values to prevent false matches.
@@ -27,13 +27,13 @@ Release featuring pre-commit integration and safe remediation enhancements.
 - **Audit logic hardening**: Improved detection for instance and class attributes in AST.
 
 ### Changed
-- **Safety First Guarantee**: Elevated "provably safe" remediation policy to core project identity.
+- **Refusal-first model**: Made the policy of refusing ambiguous rewrites the documented default, not an option.
 - **CLI Exit Codes**: Standardized exit code `1` for all findings (removed `--fail-on-findings`).
 - **Heuristics**: Updated patterns for modern secret formats (e.g., Stripe `sk_live_...`).
 
 ### Removed
 - **`--open-pr`**: Removed legacy pull request automation to focus on core CLI reliability.
-- **AI-narrative comments**: Cleaned up codebase for a more professional, artisanal developer voice.
+- **Comments**: Removed AI-generated narrative comments from source files.
 
 ---
 

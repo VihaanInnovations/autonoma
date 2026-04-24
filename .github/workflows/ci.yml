@@ -37,6 +37,13 @@ jobs:
         run: pip install dist/*.whl
         shell: bash
 
+      # ── Unit tests ────────────────────────────────────────────
+      - name: Install test dependencies
+        run: pip install pytest
+
+      - name: Run unit tests
+        run: pytest -q
+
       # ── CLI smoke tests ───────────────────────────────────────
       - name: autonoma --version
         run: autonoma --version
@@ -44,30 +51,14 @@ jobs:
       - name: autonoma --help
         run: autonoma --help
 
-      - name: Scan demo-project (text)
-        # Expected exit code 1 because findings exist
-        run: autonoma scan demo-project/src || if [ $? -eq 1 ]; then echo "Findings detected as expected"; else exit 1; fi
-        shell: bash
-
-      - name: Scan demo-project (JSON)
-        # Scan always outputs JSON now, no format flag needed
-        run: autonoma scan demo-project/src || if [ $? -eq 1 ]; then echo "JSON findings detected"; else exit 1; fi
-        shell: bash
-
-      - name: Dry-run fix
-        # Use modern 'fix' command with --diff
-        # Expected exit code 1 because findings exist
-        run: autonoma fix demo-project/src --diff --dry-run || [ $? -eq 1 ]
-        shell: bash
-
-      - name: Verify exit code 1 on findings
-        # Confirm that findings lead to exit code 1
+      - name: Scan demo-project — expect findings (exit 1)
         run: |
-          autonoma scan demo-project/src || EXIT_CODE=$?
-          if [ "$EXIT_CODE" -eq 1 ]; then
-            echo "Correct: Exit code 1 on findings"
-          else
-            echo "Error: Expected exit code 1, but got $EXIT_CODE"
-            exit 1
-          fi
+          autonoma scan demo-project/src; code=$?
+          [ "$code" -eq 1 ] || { echo "Expected exit 1, got $code"; exit 1; }
+        shell: bash
+
+      - name: Dry-run fix — expect findings (exit 1)
+        run: |
+          autonoma fix demo-project/src --diff --dry-run; code=$?
+          [ "$code" -eq 1 ] || { echo "Expected exit 1, got $code"; exit 1; }
         shell: bash

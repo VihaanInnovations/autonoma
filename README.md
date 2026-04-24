@@ -6,9 +6,9 @@
 ![Edition](https://img.shields.io/badge/Edition-Community-orange)
 ![PyPI Version](https://img.shields.io/pypi/v/autonoma-cli)
 
-**Autonoma safely remediates hardcoded secrets by rewriting them to environment variables.** Using AST transformations instead of regex, it applies changes only when they are provably semantic-preserving.
+**Autonoma detects hardcoded secrets and replaces them with `os.environ[...]` references using AST rewrites.** Changes are applied only when the rewrite is deterministic and semantically-preserving.
 
-- **AST-Based**: Semantic-preserving rewrites, not regex guesswork.
+- **AST-Based**: Rewrites use the parsed syntax tree, not pattern matching on raw text.
 - **Local & Private**: No network calls or external dependencies.
 - **CI/CD Ready**: Idempotent, minimal diffs, and zero-noise operation.
 
@@ -24,7 +24,7 @@ Hardcoded secrets in codebases:
 - teams detect leaks but avoid auto-fix tools because they are unsafe
 
 Most tools detect them.  
-Autonoma fixes them **only when it can prove the rewrite is safe**.
+Autonoma fixes them **only when the rewrite is deterministic and semantically-preserving**.
 
 ---
 
@@ -34,7 +34,6 @@ Autonoma fixes them **only when it can prove the rewrite is safe**.
 autonoma scan .
 autonoma fix .
 git diff
-
 ```
 
 ## Installation
@@ -58,23 +57,63 @@ Add this to your `.pre-commit-config.yaml` to prevent secrets from entering your
 
 ---
 
-## Commands
-
-Autonoma provides the following CLI commands:
-
-### scan
-Detection mode. Outputs JSON to `stdout` and human-readable summaries to `stderr`. Ideal for CI.
+## Try it in 60 seconds
 
 ```bash
-# Scan a directory (outputs JSON findings to stdout)
+# 1. Create a test file with hardcoded secrets
+cat > test_secrets.py << 'EOF'
+SENDGRID_API_KEY = "sg-live-abc123xyz789"
+DB_PASSWORD = "Pr0dAccess2024!"
+EOF
+
+# Also create the env contract file (required for safe remediation)
+printf 'SENDGRID_API_KEY=\nDB_PASSWORD=\n' > .env.example
+
+# 2. Scan — emits JSON findings to stdout
+autonoma scan test_secrets.py
+
+# 3. Fix — rewrites the file in place
+autonoma fix test_secrets.py
+
+# 4. Scan again — should now be clean (exit 0)
+autonoma scan test_secrets.py
+
+# 5. Inspect the result
+cat test_secrets.py
+```
+
+Expected output after fix:
+
+```python
+import os
+SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
+DB_PASSWORD = os.environ["DB_PASSWORD"]
+```
+
+---
+
+## Commands
+
+### scan
+Detection mode. Outputs JSON to `stdout` and a human-readable summary to `stderr`. Non-mutating — never modifies files.
+
+```bash
+# Scan a directory (JSON findings to stdout)
 autonoma scan src/
 
-# To save JSON results to a file
+# Save JSON results to a file
 autonoma scan src/ > findings.json
 ```
 
+**Exit codes for `scan`:**
+| Code | Meaning |
+|------|---------|
+| `0` | No findings |
+| `1` | Findings detected |
+| `3` | Tool error |
+
 ### fix
-Remedies hardcoded secrets. Applies AST rewrites and generates audit logs.
+Remediates hardcoded secrets using AST rewrites. Mutates files in place.
 
 ```bash
 # Apply fixes
@@ -83,15 +122,24 @@ autonoma fix src/
 # Preview patches before writing
 autonoma fix src/ --diff
 
-# Write remediation audit log (determines format by suffix .md/.json)
+# Write remediation audit log
 autonoma fix src/ --report-out audit.json
 ```
 
+**Exit codes for `fix`:**
+| Code | Meaning |
+|------|---------|
+| `0` | No findings — repo was already clean |
+| `1` | Findings existed before remediation (remediation may have succeeded — check output for FIXED/REFUSED counts) |
+| `3` | Tool error |
+
+> The `fix` command exits `1` whenever it found secrets before attempting remediation, regardless of whether the rewrite succeeded. This is intentional: CI pipelines should flag the commit where secrets were introduced, even after auto-fix. Run `autonoma scan` afterward to confirm the repo is clean.
+
 ### history-scan
-Analyzes git history for secrets that were added and subsequently removed or modified. 
+Analyzes git history for secrets that were added and subsequently removed or modified.
 
 > [!NOTE]
-> **Detection only.** This command does not rewrite git history or modify commits. 
+> **Detection only.** This command does not rewrite git history or modify commits.
 
 ```bash
 autonoma history-scan .
@@ -99,40 +147,63 @@ autonoma history-scan .
 
 ---
 
-## Example Workflow
+## Before / After
+
+These are the patterns Autonoma actually fixes today.
 
 ### Before
 ```python
 # settings.py
-DATABASES = {
-    "default": {
-        "PASSWORD": "Pr0d@ccess2024!",  # SEC001
-    }
-}
-SENDGRID_API_KEY = "demo_sendgrid_key"  # SEC002
+SENDGRID_API_KEY = "sg-live-abc123xyz789"
+DB_PASSWORD = "Pr0dAccess2024!"
 ```
 
 ### After (`autonoma fix .`)
 ```python
 # settings.py
 import os
-DATABASES = {
-    "default": {
-        "PASSWORD": os.environ["PASSWORD"],
-    }
-}
 SENDGRID_API_KEY = os.environ["SENDGRID_API_KEY"]
+DB_PASSWORD = os.environ["DB_PASSWORD"]
 ```
 
+### Refused (refusal-first safety)
+```python
+# f-string — refused because the rewrite would change semantics
+api_key = f"prefix_{BASE_KEY}"
+# → REFUSED: refuse_fstring_mixed_expression
+
+# Dict/nested value — refused because the target is not a simple assignment
+DATABASES = {
+    "default": {"PASSWORD": "Pr0d@ccess2024!"}
+}
+# → REFUSED: unsupported assignment target type
+```
+
+Refused findings are reported in the JSON output and cause a non-zero exit in CI. Files with refused findings are never modified.
+
 ---
+
+## What Autonoma fixes vs refuses
+
+| Pattern | Example | Behavior | Why |
+|---------|---------|----------|-----|
+| Simple assignment | `api_key = "sk-abc123"` | **Fixed** | Deterministic AST rewrite |
+| Class attribute | `class C: SECRET = "abc"` | **Fixed** | Deterministic AST rewrite |
+| Keyword argument | `connect(password="abc")` | **Fixed** | Deterministic AST rewrite |
+| f-string | `key = f"prefix_{v}"` | **Refused** | Rewrite would change runtime behavior |
+| Concatenation | `key = "sk-" + suffix` | **Refused** | Rewrite would change runtime behavior |
+| Dict/nested value | `cfg = {"pass": "abc"}` | **Refused** | Not a simple assignment target |
+| Multiple assignment | `A = B = "secret"` | **Refused** | Ambiguous target |
+| Already safe | `key = os.getenv("KEY")` | **Skipped** | No change needed |
+| Missing `.env.example` | any pattern | **Refused** | No env contract to derive variable name |
 
 ---
 
 ## CI/CD Features
 
-- **Idempotent**: Zero changes after the first pass.
-- **Minimal Diff**: Preserves original formatting and comments.
-- **Import-aware**: Handles namespace collisions and existing imports automatically.
+- **Idempotent**: Re-running on an already-fixed file makes no changes.
+- **Format-preserving**: Rewrites keep original indentation and surrounding comments intact.
+- **Import-aware**: Adds `import os` only when absent; avoids duplicate imports.
 
 ## Integration & CI/CD
 
@@ -144,15 +215,10 @@ To fail your build if any secrets are detected:
   run: autonoma scan .
 ```
 
-### Exit Codes:
-- `0`: No findings.
-- `1`: Findings detected (even if unfixable).
-- `2+`: Tool/Runtime error.
-
 ---
 
 ## Legacy Commands
-`analyze` is retained for backwards compatibility. We recommend migrating to `scan` or `fix`.
+`analyze` is retained for backwards compatibility. Migrate to `scan` or `fix`.
 
 ```bash
 # Equivalent to 'autonoma scan'
@@ -174,9 +240,10 @@ autonoma analyze src/ --auto-fix
 ### What it refuses (by design)
 - **Complex Expressions**: f-strings, concatenations, or function calls on the RHS.
 - **Ambiguous Targets**: Multiple assignments (`A = B = "secret"`) or tuple unpacking.
-- **Missing Context**: If no `.env` or environment contract is found in the repo.
+- **Nested/Dict Values**: Values inside dicts, lists, or tuples.
+- **Missing Context**: If no `.env.example` or environment contract is found in the repo.
 
-Refused cases are reported and will cause non-zero exit codes in CI.
+Refused cases are reported in JSON output and will cause non-zero exit codes in CI. The file is never modified if any issue in it is refused.
 
 ### What it does not do
 - It does not use entropy/guessing (it uses heuristic name matching).
@@ -186,7 +253,8 @@ Refused cases are reported and will cause non-zero exit codes in CI.
 ---
 
 ## JSON Schema
-Reports use a consistent top-level structure:
+
+`autonoma scan` outputs a `detect-only` report to stdout:
 
 ```json
 {
@@ -194,12 +262,26 @@ Reports use a consistent top-level structure:
   "tool_name": "autonoma",
   "tool_version": "0.1.5",
   "generated_at": "2026-03-24T12:00:00Z",
+  "mode": "detect-only",
   "summary": {
-    "total_findings": 1,
+    "files_processed": 3,
+    "total_findings": 2,
     "safe_to_fix": 1,
-    "refused": 0
+    "refused": 1
   },
-  "findings": []
+  "findings": [
+    {
+      "file": "settings.py",
+      "line": 4,
+      "pattern_type": "api_key",
+      "severity": "high",
+      "rule_id": "SEC002",
+      "safe_to_fix": true,
+      "suggested_env_var": "SENDGRID_API_KEY",
+      "refusal_reason": null,
+      "fingerprint": "sha256:abc123..."
+    }
+  ]
 }
 ```
 
