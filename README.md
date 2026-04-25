@@ -10,7 +10,7 @@
 
 - **AST-Based**: Rewrites use the parsed syntax tree, not pattern matching on raw text.
 - **Local & Private**: No network calls or external dependencies.
-- **CI/CD Ready**: Idempotent, minimal diffs, and zero-noise operation.
+- **CI/CD Ready**: Deterministic scan output, stable exit codes, and non-mutating scan mode.
 
 ![Autonoma Demo](docs/Animation.gif)
 
@@ -23,7 +23,7 @@ Hardcoded secrets in codebases:
 - fixing them manually breaks code or misses edge cases
 - teams detect leaks but avoid auto-fix tools because they are unsafe
 
-Most tools detect them.  
+Secret scanners usually stop at detection..  
 Autonoma fixes them **only when the rewrite is deterministic and semantically-preserving**.
 
 ---
@@ -43,7 +43,7 @@ pip install autonoma-cli
 ```
 
 ### Pre-commit Integration
-Add this to your `.pre-commit-config.yaml` to prevent secrets from entering your history:
+Add this to your `.pre-commit-config.yaml` to scan staged Python files before commit:
 
 ```yaml
 - repo: local
@@ -243,7 +243,7 @@ autonoma analyze src/ --auto-fix
 - **Nested/Dict Values**: Values inside dicts, lists, or tuples.
 - **Missing Context**: If no `.env.example` or environment contract is found in the repo.
 
-Refused cases are reported in JSON output and will cause non-zero exit codes in CI. The file is never modified if any issue in it is refused.
+Refused cases are reported in JSON output and will cause non-zero exit codes in CI. Refused findings are not modified.
 
 ### What it does not do
 - It does not use entropy/guessing (it uses heuristic name matching).
