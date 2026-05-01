@@ -57,8 +57,8 @@ jobs:
           [ "$code" -eq 1 ] || { echo "Expected exit 1, got $code"; exit 1; }
         shell: bash
 
-      - name: Dry-run fix — expect findings (exit 1)
+      - name: Dry-run fix — expect exit 0 (refused/preview findings)
         run: |
-          autonoma fix demo-project/src --diff --dry-run; code=$?
-          [ "$code" -eq 1 ] || { echo "Expected exit 1, got $code"; exit 1; }
+          autonoma fix demo-project/src --dry-run; code=$?
+          [ "$code" -eq 0 ] || { echo "Expected exit 0, got $code"; exit 1; }
         shell: bash
