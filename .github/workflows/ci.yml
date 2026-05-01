@@ -53,12 +53,18 @@ jobs:
 
       - name: Scan demo-project — expect findings (exit 1)
         run: |
-          autonoma scan demo-project/src; code=$?
+          set +e
+          autonoma scan demo-project/src
+          code=$?
+          set -e
           [ "$code" -eq 1 ] || { echo "Expected exit 1, got $code"; exit 1; }
         shell: bash
 
       - name: Dry-run fix — expect exit 0 (refused/preview findings)
         run: |
-          autonoma fix demo-project/src --dry-run; code=$?
+          set +e
+          autonoma fix demo-project/src --dry-run
+          code=$?
+          set -e
           [ "$code" -eq 0 ] || { echo "Expected exit 0, got $code"; exit 1; }
         shell: bash
