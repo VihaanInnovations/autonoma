@@ -36,7 +36,7 @@ def cli():
 def _run_analyze_pipeline(
     path, fmt="text", verbose=False, exclude=(), include_ext=(),
     auto_fix=False, dry_run=False, diff=False, ci=False, json_out=False,
-    report_out=None, quiet=False, threads=1, detect_only=False
+    report_out=None, quiet=False, threads=1, detect_only=False, fix_mode=False
 ):
     try:
         target = Path(path).resolve()
@@ -217,6 +217,10 @@ def _run_analyze_pipeline(
             report_json(report, fix_outcomes=all_outcomes if (auto_fix and report.total_issues > 0) else None, dry_run=dry_run)
 
         # Exit code
+        if fix_mode:
+            modified = any(o.state == FIXED for o in all_outcomes)
+            sys.exit(1 if modified else 0)
+
         if ci:
             fixable_count = sum(
                 1 for i in report.all_issues
@@ -228,7 +232,7 @@ def _run_analyze_pipeline(
                 sys.exit(2)
             else:
                 sys.exit(1)
-        
+
         if report.total_issues > 0:
             sys.exit(1)
 
@@ -295,7 +299,7 @@ def fix(path, dry_run, diff, report_out, json_out, exclude, include_ext, threads
     _run_analyze_pipeline(
         path=path, auto_fix=True, dry_run=dry_run, diff=diff, report_out=report_out,
         json_out=json_out, exclude=exclude, include_ext=include_ext, threads=threads,
-        quiet=quiet, ci=ci, detect_only=False
+        quiet=quiet, ci=ci, detect_only=False, fix_mode=True
     )
 
 @cli.command(name="history-scan")
