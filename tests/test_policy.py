@@ -541,7 +541,8 @@ class TestIntegration:
         if sec002_findings:
             trace = sec002_findings[0].get("decision_trace")
             assert trace is not None
-            assert trace["final_action"] == "block_with_reason"
+            # scan runs in dry-run mode: SEC002 without env contract → preview_only (not block).
+            assert trace["final_action"] == "preview_only"
 
     def test_report_schema_includes_decision_trace_key(self, sec001_project):
         """decision_trace key exists on finding objects (None or dict)."""

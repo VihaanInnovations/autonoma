@@ -43,8 +43,8 @@ class SecretVisitor(ast.NodeVisitor):
 
                     if is_environ:
                         sl = target.slice
-                        if isinstance(sl, (ast.Constant, ast.Str)):
-                            key_name = sl.s if isinstance(sl, ast.Str) else sl.value
+                        if isinstance(sl, ast.Constant):
+                            key_name = sl.value
                             if key_name and isinstance(key_name, str):
                                 self.engine._collect_issue(node, node.value, key_name, key_name, self.issues, is_environ=True)
 
@@ -120,7 +120,7 @@ class ASTEngine:
         if self._is_metadata_variable(name):
             return False
 
-        if not isinstance(node, (ast.Constant, ast.Str, ast.JoinedStr)):
+        if not isinstance(node, (ast.Constant, ast.JoinedStr)):
             return False
         
         if isinstance(node, ast.JoinedStr):
@@ -129,7 +129,7 @@ class ASTEngine:
             # so the fixer can explicitly refuse it.
             return self._looks_like_secret("", name)
 
-        val = getattr(node, 's', getattr(node, 'value', None))
+        val = getattr(node, 'value', None)
         if not isinstance(val, str) or len(val) == 0:
             return False
         
@@ -152,7 +152,7 @@ class ASTEngine:
 
     def _collect_issue(self, node, value_node, check_name, original_name, issues, is_environ=False):
 
-        val = getattr(value_node, 's', getattr(value_node, 'value', None))
+        val = getattr(value_node, 'value', None)
         
         check_name_lower = check_name.lower()
         is_password = any(k in check_name_lower for k in ['password', 'passwd', 'pwd'])

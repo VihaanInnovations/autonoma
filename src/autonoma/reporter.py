@@ -317,7 +317,11 @@ def report_fix_outcomes(outcomes: list, fmt: str = "text", out: TextIO = None,
         if o.message:
             out.write(f"  - {o.message}")
         out.write("\n")
-        
+
+        if o.env_var and o.state == "REFUSED":
+            out.write(f"             {_Colors.CYAN}suggested_env_var: {o.env_var}{_Colors.RESET}\n")
+            out.write(f"             {_Colors.DIM}Add to .env.example: {o.env_var}={_Colors.RESET}\n")
+
     if diff_patches:
         out.write(f"\n{_Colors.BOLD}=== Proposed Code Changes ==={_Colors.RESET}\n")
         for patch in diff_patches:

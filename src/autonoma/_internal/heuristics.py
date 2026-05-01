@@ -15,11 +15,27 @@ from ..decisions import DecisionOutcome, RefusalReason, AnalysisResult
 from ..audit import truncate_secret, detect_provider, generate_fingerprint
 
 
-# Default: Python only. User can expand via --include-ext.
-DEFAULT_EXTENSIONS = {'.py'}
+def _file_ext(file_path: str) -> str:
+    """Return file extension, treating dotfiles like .env as extension '.env'."""
+    p = Path(file_path)
+    s = p.suffix.lower()
+    if not s and p.name.startswith('.'):
+        return p.name.lower()
+    return s
+
+
+# Default: scan all common secret-bearing file types without flags.
+DEFAULT_EXTENSIONS = {
+    '.py', '.env', '.yaml', '.yml', '.json', '.toml',
+    '.tf', '.sh', '.config', '.ini', '.properties',
+}
 
 # All languages the engine knows how to scan (for --include-ext validation)
-ALL_SUPPORTED_EXTENSIONS = {'.py', '.js', '.jsx', '.ts', '.tsx'}
+ALL_SUPPORTED_EXTENSIONS = {
+    '.py', '.js', '.jsx', '.ts', '.tsx',
+    '.env', '.yaml', '.yml', '.json', '.toml',
+    '.tf', '.sh', '.config', '.ini', '.properties',
+}
 
 
 class HeuristicsEngine:
@@ -48,7 +64,7 @@ class HeuristicsEngine:
             # --- Python-only patterns ---
             {
                 "id": "SEC001",
-                "pattern": r"['\"]?\w*[Pp]assword\w*['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
+                "pattern": r"(?i)['\"]?\w*(?:password|passwd|pwd)\w*['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
                 "message": "Hardcoded password detected.",
                 "type": "security",
                 "severity": "high",
@@ -57,7 +73,7 @@ class HeuristicsEngine:
             },
             {
                 "id": "SEC002",
-                "pattern": r"['\"]?api_key['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
+                "pattern": r"(?i)['\"]?\w*(?:api_key|apikey)\w*['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
                 "message": "Hardcoded API key detected.",
                 "type": "security",
                 "severity": "high",
@@ -66,7 +82,10 @@ class HeuristicsEngine:
             },
             {
                 "id": "SEC002",
-                "pattern": r"['\"]?(secret|token|auth_token|api_secret)['\"]?\s*[:=]\s*['\"][^'\"]+['\"]",
+                "pattern": (
+                    r"(?i)['\"]?\w*(?:secret_key|secret|token|auth_token|api_secret|"
+                    r"access_key|private_key)\w*['\"]?\s*[:=]\s*['\"][^'\"]+['\"]"
+                ),
                 "message": "Hardcoded secret/token detected.",
                 "type": "security",
                 "severity": "high",
@@ -101,6 +120,95 @@ class HeuristicsEngine:
                 "extensions": {".js", ".jsx", ".ts", ".tsx"},
                 "pattern_type": "token",
             },
+            # --- .env / .config / .ini / .properties / .sh: KEY=VALUE format ---
+            {
+                "id": "SEC001",
+                "pattern": r"(?i)(?:export\s+)?\w*(?:password|passwd|pwd)\w*\s*=\s*\S+",
+                "message": "Hardcoded password detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".env", ".config", ".ini", ".properties", ".sh"},
+                "pattern_type": "password",
+            },
+            {
+                "id": "SEC002",
+                "pattern": (
+                    r"(?i)(?:export\s+)?\w*(?:secret|api_key|api_secret|auth_token|"
+                    r"auth_key|access_key|private_key|token|stripe|sendgrid|twilio|"
+                    r"mailgun|github_token|heroku|cloudinary)\w*\s*=\s*\S+"
+                ),
+                "message": "Hardcoded API key/secret detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".env", ".config", ".ini", ".properties", ".sh"},
+                "pattern_type": "api_key",
+            },
+            # --- YAML / YML: key: value format ---
+            {
+                "id": "SEC001",
+                "pattern": r"(?i)['\"]?\w*(?:password|passwd|pwd)\w*['\"]?\s*:\s+\S+",
+                "message": "Hardcoded password detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".yaml", ".yml"},
+                "pattern_type": "password",
+            },
+            {
+                "id": "SEC002",
+                "pattern": (
+                    r"(?i)['\"]?\w*(?:api_key|secret_key|secret|auth_token|auth_key|"
+                    r"access_key|private_key|token)\w*['\"]?\s*:\s+\S+"
+                ),
+                "message": "Hardcoded API key/secret detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".yaml", ".yml"},
+                "pattern_type": "api_key",
+            },
+            # --- JSON: "key": "value" format ---
+            {
+                "id": "SEC001",
+                "pattern": r'(?i)"\w*(?:password|passwd|pwd)\w*"\s*:\s*"[^"]+"',
+                "message": "Hardcoded password detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".json"},
+                "pattern_type": "password",
+            },
+            {
+                "id": "SEC002",
+                "pattern": (
+                    r'(?i)"\w*(?:api_key|secret_key|secret|auth_token|auth_key|'
+                    r'access_key|private_key|token)\w*"\s*:\s*"[^"]+"'
+                ),
+                "message": "Hardcoded API key/secret detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".json"},
+                "pattern_type": "api_key",
+            },
+            # --- TOML / Terraform HCL: key = "value" format ---
+            {
+                "id": "SEC001",
+                "pattern": r'(?i)["\']?\w*(?:password|passwd|pwd)\w*["\']?\s*=\s*["\'][^"\']+["\']',
+                "message": "Hardcoded password detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".toml", ".tf"},
+                "pattern_type": "password",
+            },
+            {
+                "id": "SEC002",
+                "pattern": (
+                    r'(?i)["\']?\w*(?:api_key|secret_key|secret|auth_token|auth_key|'
+                    r'access_key|private_key|token)\w*["\']?\s*=\s*["\'][^"\']+["\']'
+                ),
+                "message": "Hardcoded API key/secret detected.",
+                "type": "security",
+                "severity": "high",
+                "extensions": {".toml", ".tf"},
+                "pattern_type": "api_key",
+            },
         ]
 
     def analyze(self, content: str, file_path: str) -> AnalysisResult:
@@ -117,7 +225,7 @@ class HeuristicsEngine:
                 f"File exceeds {self.MAX_FILE_SIZE} bytes limit"
             )
 
-        ext = Path(file_path).suffix.lower() if file_path else ""
+        ext = _file_ext(file_path) if file_path else ""
         if ext not in self.allowed_extensions:
             return AnalysisResult.refused(
                 RefusalReason.UNSUPPORTED_LANGUAGE,
@@ -168,7 +276,7 @@ class HeuristicsEngine:
     def _run_detection(self, content: str, file_path: str) -> List[Dict[str, Any]]:
         """Core detection logic. Only applies patterns matching the file extension."""
         issues = []
-        ext = Path(file_path).suffix.lower() if file_path else ""
+        ext = _file_ext(file_path) if file_path else ""
 
         # 1. AST analysis (Python only, handled internally by ASTEngine)
         if self.ast_engine and ext == ".py":
@@ -208,10 +316,11 @@ class HeuristicsEngine:
                             if len(secret_val_part) >= 2 and secret_val_part[0] in ("'", '"') and secret_val_part[-1] == secret_val_part[0]:
                                 secret_val_part = secret_val_part[1:-1]
                                 
-                            # Strip JS keywords (const/let/var) if present
-                            for kw in ("const ", "let ", "var "):
+                            # Strip leading keywords (JS: const/let/var, shell: export)
+                            for kw in ("const ", "let ", "var ", "export ", "EXPORT "):
                                 if var_part.startswith(kw):
                                     var_part = var_part[len(kw):].strip()
+                                    break
                             if self._is_metadata_variable(var_part):
                                 continue
 
@@ -225,6 +334,7 @@ class HeuristicsEngine:
                                 "severity": rule["severity"],
                                 "source": "heuristics_regex",
                                 "pattern_type": rule.get("pattern_type", "unknown"),
+                                "var_name": var_part,
                                 "truncated_secret": truncate_secret(secret_val_part),
                                 "provider": detect_provider(secret_val_part),
                                 "fingerprint": generate_fingerprint(secret_val_part),
@@ -234,17 +344,26 @@ class HeuristicsEngine:
         except Exception:
             pass
 
-        return issues
+        # Deduplicate: AST and regex can both fire on the same line.
+        # Prefer AST-sourced findings (more accurate) over regex for the same (line, id).
+        seen: dict = {}
+        for issue in issues:
+            key = (issue["line"], issue["id"])
+            if key not in seen or issue.get("source", "").startswith("ast"):
+                seen[key] = issue
+        return list(seen.values())
 
     def _is_in_comment(self, line: str, match_pos: int, file_path: str) -> bool:
         """Check if match position is inside a comment."""
         prefix = line[:match_pos]
-        ext = Path(file_path).suffix.lower() if file_path else ""
+        ext = _file_ext(file_path) if file_path else ""
 
-        if ext == ".py":
+        if ext in {".py", ".yaml", ".yml", ".env", ".sh", ".config", ".ini", ".properties", ".toml"}:
             return "#" in prefix
         elif ext in {".js", ".ts", ".jsx", ".tsx"}:
             return "//" in prefix
+        elif ext == ".tf":
+            return "#" in prefix or "//" in prefix
         return False
 
     def _is_already_safe(self, line: str) -> bool:

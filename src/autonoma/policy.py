@@ -63,6 +63,7 @@ class PolicyInputs:
     single_literal_replacement: bool = True  # True if fix replaces exactly one simple string literal
     override_token: OverrideToken = field(default_factory=OverrideToken)
     interactive_ci: bool = False  # True when running in an interactive CI environment
+    dry_run: bool = False  # True when previewing only — relaxes env_contract gate for SEC002
 
 
 @dataclass
@@ -337,7 +338,8 @@ def evaluate_finding_policy(finding_id: str, inputs: PolicyInputs) -> DecisionTr
     ))
 
     # ── Final action ─────────────────────────────────────────────────────
-    if is_sec002 and not g_env:
+    # SEC002 without env contract blocks auto-apply but not dry-run preview.
+    if is_sec002 and not g_env and not inputs.dry_run:
         return DecisionTrace(
             finding_id=finding_id,
             rule_id=inputs.rule_id,

@@ -13,7 +13,7 @@ import click
 from dataclasses import asdict as _dc_asdict
 
 from . import __version__
-from ._internal.heuristics import ALL_SUPPORTED_EXTENSIONS
+from ._internal.heuristics import ALL_SUPPORTED_EXTENSIONS, DEFAULT_EXTENSIONS
 from .engine import AnalysisEngine, DetectFinding, DetectReport, DetectSummary
 from .history import HistoryEngine
 from .fixer import fix_file_issues, process_findings_with_policy, FixOutcome, FIXED, REFUSED, SKIPPED, FAILED
@@ -48,14 +48,15 @@ def _run_analyze_pipeline(
             dry_run = True
         if dry_run:
             auto_fix = True
+            diff = True  # dry-run always shows a diff
         if detect_only:
             auto_fix = True
             dry_run = True  
             quiet = True    
             verbose = False 
 
-        # Build allowed extensions set
-        allowed = {".py"}
+        # Build allowed extensions set (start from full default set)
+        allowed = set(DEFAULT_EXTENSIONS)
         for ext in include_ext:
             ext = ext if ext.startswith(".") else f".{ext}"
             if ext in ALL_SUPPORTED_EXTENSIONS:
@@ -124,6 +125,7 @@ def _run_analyze_pipeline(
                     env_contract=_fix_env_contract,
                     write=not dry_run,
                     finding_counter_start=counter_start,
+                    dry_run=dry_run,
                 )
                 for issue, trace in zip(fr.issues, file_traces):
                     _all_traces[(fr.file, issue.get("line"), issue.get("id", ""))] = trace
@@ -171,7 +173,7 @@ def _run_analyze_pipeline(
                         severity=issue.get("severity", "medium"),
                         safe_to_fix=(found_outcome.state == "FIXED"),
                         refusal_reason=found_outcome.reason if found_outcome.state == "REFUSED" else None,
-                        suggested_env_var=found_outcome.env_var if found_outcome.state == "FIXED" else None,
+                        suggested_env_var=found_outcome.env_var,
                         rule_id=rule_id,
                         fingerprint=found_outcome.fingerprint or "sha256:unknown",
                         provider=issue.get("provider"),
@@ -309,8 +311,8 @@ def history_scan(path, verbose, exclude, include_ext, json, quiet, threads):
     try:
         target = Path(path).resolve()
 
-        # Build allowed extensions set
-        allowed = {".py"}
+        # Build allowed extensions set (start from full default set)
+        allowed = set(DEFAULT_EXTENSIONS)
         for ext in include_ext:
             ext = ext if ext.startswith(".") else f".{ext}"
             if ext in ALL_SUPPORTED_EXTENSIONS:
@@ -359,8 +361,8 @@ def pre_commit_cmd(files, auto_fix, include_ext, exclude, verbose, quiet, json_o
         if not files:
             sys.exit(0)
 
-        # Build allowed extensions set
-        allowed = {".py"}
+        # Build allowed extensions set (start from full default set)
+        allowed = set(DEFAULT_EXTENSIONS)
         for ext in include_ext:
             ext = ext if ext.startswith(".") else f".{ext}"
             if ext in ALL_SUPPORTED_EXTENSIONS:

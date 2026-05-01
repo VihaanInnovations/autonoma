@@ -183,8 +183,10 @@ class TestScanFixTraceConsistency:
         fix_data = json.loads(fix_result.stdout)
         fix_trace = fix_data["fix_results"][0]["decision_trace"]
 
-        assert scan_trace["final_action"] == fix_trace["final_action"] == "block_with_reason"
-        assert scan_trace["rationale"] == fix_trace["rationale"]
+        # scan (dry-run) relaxes SEC002: preview_only instead of block_with_reason.
+        # fix (apply) still blocks without env contract.
+        assert scan_trace["final_action"] == "preview_only"
+        assert fix_trace["final_action"] == "block_with_reason"
 
 
 # ---------------------------------------------------------------------------

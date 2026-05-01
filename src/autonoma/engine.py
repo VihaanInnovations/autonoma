@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Optional, Set, Tuple, Literal
 
 from .scanner import Scanner
 from .config import ConfigManager
-from ._internal.heuristics import DEFAULT_EXTENSIONS, ALL_SUPPORTED_EXTENSIONS
+from ._internal.heuristics import DEFAULT_EXTENSIONS, ALL_SUPPORTED_EXTENSIONS, _file_ext
 from ._internal.merge_utils import make_issue_key
 from . import __version__
 
@@ -281,7 +281,7 @@ class AnalysisEngine:
     def _gather_files(self, target: Path, exclude_patterns: List[str]) -> List[Path]:
         """Gather files to analyze, respecting skip dirs and exclude patterns."""
         if target.is_file():
-            if target.suffix in self._extensions:
+            if _file_ext(str(target)) in self._extensions:
                 return [target]
             return []
 
@@ -291,14 +291,14 @@ class AnalysisEngine:
             dirs[:] = [
                 d for d in dirs
                 if d not in SKIP_DIRS and not any(
-                    fnmatch.fnmatch(d, p) or fnmatch.fnmatch(d + '/', p) 
+                    fnmatch.fnmatch(d, p) or fnmatch.fnmatch(d + '/', p)
                     for p in exclude_patterns
                 )
             ]
 
             for filename in filenames:
                 file_path = Path(root) / filename
-                if file_path.suffix not in self._extensions:
+                if _file_ext(str(file_path)) not in self._extensions:
                     continue
 
                 # Check exclude patterns against relative path

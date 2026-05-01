@@ -53,14 +53,12 @@ jobs:
 
       - name: Scan demo-project — expect findings (exit 1)
         run: |
-          code=0
-          autonoma scan demo-project/src || code=$?
+          autonoma scan demo-project/src; code=$?
           [ "$code" -eq 1 ] || { echo "Expected exit 1, got $code"; exit 1; }
         shell: bash
 
       - name: Dry-run fix — expect findings (exit 1)
         run: |
-          code=0
-          autonoma fix demo-project/src --diff --dry-run || code=$?
+          autonoma fix demo-project/src --diff --dry-run; code=$?
           [ "$code" -eq 1 ] || { echo "Expected exit 1, got $code"; exit 1; }
         shell: bash

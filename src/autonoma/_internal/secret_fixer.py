@@ -118,8 +118,8 @@ def _extract_var_name(target: ast.expr) -> Optional[str]:
                     and target.value.value.id == 'os'
                     and target.value.attr == 'environ'):
                 sl = target.slice
-                if isinstance(sl, (ast.Constant, ast.Str)):
-                    return sl.s if isinstance(sl, ast.Str) else sl.value
+                if isinstance(sl, ast.Constant):
+                    return sl.value
     return None
 
 
@@ -134,7 +134,7 @@ def _is_os_environ_target(target: ast.expr) -> bool:
 
 
 def _is_string_literal(node: ast.expr) -> bool:
-    return isinstance(node, (ast.Constant, ast.Str)) and isinstance(getattr(node, 's', getattr(node, 'value', None)), str)
+    return isinstance(node, ast.Constant) and isinstance(node.value, str)
 
 
 def _value_is_already_safe(node: ast.expr) -> bool:
@@ -242,7 +242,7 @@ def _find_import_insert_line(tree: ast.Module) -> int:
 
     if (tree.body
             and isinstance(tree.body[0], ast.Expr)
-            and isinstance(tree.body[0].value, (ast.Constant, ast.Str))):
+            and isinstance(tree.body[0].value, ast.Constant)):
         return tree.body[0].end_lineno
 
     return 0

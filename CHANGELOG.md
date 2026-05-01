@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.7
+
+Unblocks real-world adoption with broader file-type coverage and a better fix UX.
+
+### Added
+- **Multi-format scanning**: `.env`, `.yaml`, `.yml`, `.json`, `.toml`, `.tf`, `.sh`, `.config`, `.ini`, `.properties` are now scanned by default — no flags required.
+- **Dry-run diff output**: `autonoma fix --dry-run` now always shows a colored unified diff of proposed changes. Non-Python files get a text-replacement preview using `${ENV_VAR_NAME}` syntax.
+- **`suggested_env_var` on refused findings**: Every refused finding now reports the suggested environment variable name and the exact line to add to `.env.example`.
+
+### Changed
+- **SEC002 policy relaxed for preview**: `SEC002` findings now qualify for `preview_only` in `--dry-run` mode even without an `.env.example`. Auto-apply still requires the env contract. No finding shows `policy_block` in dry-run mode.
+- **Env contract optional for preview**: Missing `.env.example` no longer silently blocks the dry-run output. The tool shows the fix and tells the user exactly what to add to unblock auto-apply.
+
+---
+
 ## 0.1.5
 
 Documentation updates and parser reliability fixes.

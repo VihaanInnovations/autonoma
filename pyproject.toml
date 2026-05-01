@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autonoma-cli"
-version = "0.1.6"
-description = "AST-based detection and safe remediation of hardcoded secrets in Python"
+version = "0.1.7"
+description = "AST-based detection and safe remediation of hardcoded secrets in Python and config files"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
