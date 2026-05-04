@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autonoma-cli"
-version = "0.1.7"
+version = "0.1.8"
 description = "AST-based detection and safe remediation of hardcoded secrets in Python and config files"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "click>=8.1",
-    "colorama",
+    "colorama>=0.4,<1.0",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -53,4 +53,5 @@ where = ["src"]
 #   test_critical.py, test_strict.py
 #     — heavy adversarial gate scripts (generate 3k–30k LOC repos); run standalone with
 #       `python tests/test_critical.py` / `python tests/test_strict.py`. Too slow for CI.
+norecursedirs = ["bench", "archive", "dist", "build", ".git"]
 addopts = "--ignore=archive --ignore=tests/test_acceptance.py --ignore=tests/test_harness.py --ignore=tests/test_repo_categories.py --ignore=tests/test_critical.py --ignore=tests/test_strict.py"

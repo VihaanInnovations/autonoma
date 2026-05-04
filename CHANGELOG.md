@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.1.8
+Precision improvement release — false positive rate reduced from ~89% to ~14%.
+
+### Changed
+- **Test files excluded by default**: `--exclude-tests` is now ON by default.
+  Test directories (tests/, test_*, _test.py, conftest, testdata, fixtures, spec/)
+  are skipped unless `--include-tests` is passed explicitly.
+- **SEC002 precision hardened**: Removed bare 'key' and 'auth' from secret 
+  keyword list — these were firing on JSON tag variables, dict loop variables, 
+  and author metadata fields. Compound forms (api_key, auth_token) still covered.
+- **os.environ guard added**: os.environ assignments now require the key name 
+  to pass the secret-keyword filter before firing. Stops FLASK_DEBUG, 
+  FLASK_RUN_FROM_CLI and similar non-credential env vars from being flagged.
+- **OAuth2 URL arguments suppressed**: tokenUrl, scope, permission kwarg names
+  are now explicitly excluded — stops FastAPI OAuth2PasswordBearer patterns 
+  from generating false positives.
+- **docs_src/ added to docs exclusion list**: FastAPI tutorial source directory
+  now excluded when --exclude-docs is passed.
+- **colorama pinned**: colorama>=0.4,<1.0 (was unpinned).
+
+### Added
+- **--include-tests flag**: Opt back in to scanning test files explicitly.
+- **--exclude-docs / --include-docs flags**: Opt-in docs exclusion available 
+  on scan and fix commands.
+- **Precision measurement harness**: bench/ directory with four scripts —
+  measure_precision.py, sample_findings.py, auto_classify.py, compute_precision.py.
+  Measures real-world precision against canonical repos.
+
+### Fixed
+- GitHub Actions secret references (${{ secrets.X }}) no longer flagged.
+- Python dunder metadata (__author__, __version__, __email__) no longer flagged.
+- Single-character and two-character matched values no longer flagged as HIGH.
+- Stale dist/ artifacts removed before build.
+- bench/repos/ and bench/*.csv added to .gitignore.
+
+### Precision
+Measured across 5 real-world repos (requests, flask, gitleaks, trufflehog, fastapi):
+- v0.1.7 baseline: ~11% precision
+- v0.1.8: ~85.7% precision (REVIEW excluded)
+- SEC001 (password detection): 100% precision
+- SEC002 (API key detection): improved, dominant FP source eliminated
+
+---
+
 ## 0.1.7
 
 Unblocks real-world adoption with broader file-type coverage and a better fix UX.

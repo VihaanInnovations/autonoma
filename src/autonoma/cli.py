@@ -36,7 +36,8 @@ def cli():
 def _run_analyze_pipeline(
     path, fmt="text", verbose=False, exclude=(), include_ext=(),
     auto_fix=False, dry_run=False, diff=False, ci=False, json_out=False,
-    report_out=None, quiet=False, threads=1, detect_only=False, fix_mode=False
+    report_out=None, quiet=False, threads=1, detect_only=False, fix_mode=False,
+    exclude_tests=True, exclude_docs=False,
 ):
     try:
         target = Path(path).resolve()
@@ -72,6 +73,8 @@ def _run_analyze_pipeline(
                 exclude_patterns=list(exclude),
                 verbose=verbose,
                 threads=threads,
+                exclude_tests=exclude_tests,
+                exclude_docs=exclude_docs,
             )
         finally:
             engine.close()
@@ -258,13 +261,16 @@ def _run_analyze_pipeline(
 @click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
 @click.option("--threads", "-t", type=int, default=1, help="Number of concurrent threads to use for scanning.")
 @click.option("--detect-only", is_flag=True, help="Run remediation analysis without modifying files. Outputs JSON findings.")
-def analyze(path, fmt, verbose, exclude, include_ext, auto_fix, dry_run, diff, ci, json_out, report_out, quiet, threads, detect_only):
+@click.option("--exclude-tests", is_flag=True, help="Skip test files (tests/, test_*, *_test.py, conftest.py, spec/, fixtures/, testdata/).")
+@click.option("--exclude-docs", is_flag=True, help="Skip documentation files (docs/, examples/, tutorial/, documentation/).")
+def analyze(path, fmt, verbose, exclude, include_ext, auto_fix, dry_run, diff, ci, json_out, report_out, quiet, threads, detect_only, exclude_tests, exclude_docs):
     """[LEGACY] Analyze path for secrets."""
     _run_analyze_pipeline(
         path=path, fmt=fmt, verbose=verbose,
         exclude=exclude, include_ext=include_ext, auto_fix=auto_fix,
         dry_run=dry_run, diff=diff, ci=ci, json_out=json_out,
-        report_out=report_out, quiet=quiet, threads=threads, detect_only=detect_only
+        report_out=report_out, quiet=quiet, threads=threads, detect_only=detect_only,
+        exclude_tests=exclude_tests, exclude_docs=exclude_docs,
     )
 
 
@@ -275,11 +281,16 @@ def analyze(path, fmt, verbose, exclude, include_ext, auto_fix, dry_run, diff, c
 @click.option("--include-ext", multiple=True, help="Extra extensions to scan.")
 @click.option("--threads", "-t", type=int, default=1, help="Concurrent threads.")
 @click.option("--ci", is_flag=True, help="CI mode (0=none, 1=any, 2=fixable).")
-def scan(path, verbose, exclude, include_ext, threads, ci):
+@click.option("--include-tests", is_flag=True, help="Include test files in scan (excluded by default: tests/, test_*, *_test.py, conftest.py, spec/, fixtures/, testdata/).")
+@click.option("--exclude-tests", is_flag=True, expose_value=False, hidden=True, help="Deprecated: test files are excluded by default. Use --include-tests to opt in.")
+@click.option("--exclude-docs", is_flag=True, help="Skip documentation files (docs/, docs_src/, examples/, tutorial/, documentation/, README).")
+@click.option("--include-docs", is_flag=True, expose_value=False, help="Include documentation files (default behavior).")
+def scan(path, verbose, exclude, include_ext, threads, ci, include_tests, exclude_docs):
     """Scan for hardcoded secrets (non-mutating, JSON findings to stdout)."""
     _run_analyze_pipeline(
         path=path, detect_only=True,
-        verbose=verbose, exclude=exclude, include_ext=include_ext, threads=threads, ci=ci
+        verbose=verbose, exclude=exclude, include_ext=include_ext, threads=threads, ci=ci,
+        exclude_tests=not include_tests, exclude_docs=exclude_docs,
     )
 
 
@@ -294,12 +305,17 @@ def scan(path, verbose, exclude, include_ext, threads, ci):
 @click.option("--threads", "-t", type=int, default=1, help="Number of threads.")
 @click.option("--quiet", "-q", is_flag=True, help="Minimize console output.")
 @click.option("--ci", is_flag=True, help="CI mode.")
-def fix(path, dry_run, diff, report_out, json_out, exclude, include_ext, threads, quiet, ci):
+@click.option("--include-tests", is_flag=True, help="Include test files in fix (excluded by default: tests/, test_*, *_test.py, conftest.py, spec/, fixtures/, testdata/).")
+@click.option("--exclude-tests", is_flag=True, expose_value=False, hidden=True, help="Deprecated: test files are excluded by default. Use --include-tests to opt in.")
+@click.option("--exclude-docs", is_flag=True, help="Skip documentation files (docs/, docs_src/, examples/, tutorial/, documentation/, README).")
+@click.option("--include-docs", is_flag=True, expose_value=False, help="Include documentation files (default behavior).")
+def fix(path, dry_run, diff, report_out, json_out, exclude, include_ext, threads, quiet, ci, include_tests, exclude_docs):
     """Automatically fix hardcoded secrets (mutating)."""
     _run_analyze_pipeline(
         path=path, auto_fix=True, dry_run=dry_run, diff=diff, report_out=report_out,
         json_out=json_out, exclude=exclude, include_ext=include_ext, threads=threads,
-        quiet=quiet, ci=ci, detect_only=False, fix_mode=True
+        quiet=quiet, ci=ci, detect_only=False, fix_mode=True,
+        exclude_tests=not include_tests, exclude_docs=exclude_docs,
     )
 
 @cli.command(name="history-scan")

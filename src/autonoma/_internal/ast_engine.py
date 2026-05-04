@@ -9,6 +9,32 @@ from ..audit import truncate_secret, detect_provider, generate_fingerprint
 logger = logging.getLogger(__name__)
 
 
+# FIX 5: Known placeholder/fake secret substrings — skip these to reduce false positives
+_PLACEHOLDER_SUBSTRINGS = frozenset([
+    "test-key", "test_key", "dummy", "placeholder", "example", "sample",
+    "your-api-key-here", "your-secret-here", "changeme", "replace-me",
+    "secret123", "password123", "postgres", "mysql", "redis",
+    "none", "null", "undefined", "empty", "dev", "development",
+    "fake", "mock", "stub", "todo", "fixme", "xxx",
+    # OAuth2 / permission scope strings — never real secrets
+    "write", "read", "tokens",
+])
+
+# Keyword argument names that carry URL paths or permission scopes, never secret values.
+# e.g. OAuth2PasswordBearer(tokenUrl="token"), redirect_uri="...", scope="read"
+_NON_SECRET_KWARG_NAMES = frozenset({
+    "tokenurl", "url", "scope", "permission", "redirect_uri",
+})
+
+
+def _is_placeholder_value(value: str) -> bool:
+    """Return True if value looks like a known placeholder, not a real secret."""
+    if not value:
+        return False
+    lower = value.lower().strip()
+    return any(p in lower for p in _PLACEHOLDER_SUBSTRINGS)
+
+
 class SecretVisitor(ast.NodeVisitor):
     """AST visitor for secret detection."""
 
@@ -45,7 +71,7 @@ class SecretVisitor(ast.NodeVisitor):
                         sl = target.slice
                         if isinstance(sl, ast.Constant):
                             key_name = sl.value
-                            if key_name and isinstance(key_name, str):
+                            if key_name and isinstance(key_name, str) and self.engine._looks_like_secret("", key_name):
                                 self.engine._collect_issue(node, node.value, key_name, key_name, self.issues, is_environ=True)
 
         self.generic_visit(node)
@@ -54,7 +80,12 @@ class SecretVisitor(ast.NodeVisitor):
         """Handle keyword arguments."""
         for kw in node.keywords:
             # kw.arg is None means **kwargs unpacking (REFUSE)
-            if kw.arg and self.engine._is_secret_string_literal(kw.value, kw.arg):
+            if not kw.arg:
+                continue
+            # Skip kwargs whose names indicate URL paths or permission scopes.
+            if kw.arg.lower() in _NON_SECRET_KWARG_NAMES:
+                continue
+            if self.engine._is_secret_string_literal(kw.value, kw.arg):
                 self.engine._collect_issue(kw, kw.value, kw.arg, kw.arg, self.issues)
         
         self.generic_visit(node)
@@ -68,7 +99,6 @@ class ASTEngine:
         logger.debug("ASTEngine initialized (native Python AST mode)")
 
     def cleanup(self):
-        """Cleanup resources."""
         pass
 
     def compute_semantic_hash(self, content: str) -> str:
@@ -114,6 +144,9 @@ class ASTEngine:
         target = node.targets[0]
         if not isinstance(target, ast.Name):
             return False
+        # FIX 2: Skip dunder metadata (e.g. __author__, __version__)
+        if target.id.startswith("__") and target.id.endswith("__"):
+            return False
         return self._is_secret_string_literal(node.value, target.id)
 
     def _is_secret_string_literal(self, node: ast.AST, name: str) -> bool:
@@ -144,7 +177,7 @@ class ASTEngine:
         secret_keywords = [
             'password', 'passwd', 'pwd',
             'api_key', 'apikey', 'secret', 'token',
-            'auth_token', 'auth', 'credential', 'key',
+            'auth_token', 'credential',
             'azure_vision_key', 'openai_api_key'
         ]
         return any(k in check_name_lower for k in secret_keywords)
@@ -153,6 +186,9 @@ class ASTEngine:
     def _collect_issue(self, node, value_node, check_name, original_name, issues, is_environ=False):
 
         val = getattr(value_node, 'value', None)
+        # FIX 5: Skip known placeholder/fake values
+        if isinstance(val, str) and _is_placeholder_value(val):
+            return
         
         check_name_lower = check_name.lower()
         is_password = any(k in check_name_lower for k in ['password', 'passwd', 'pwd'])

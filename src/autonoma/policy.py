@@ -1,7 +1,7 @@
 """
 Autonoma — Policy Layer v1.5
 
-Separates detection from decision from execution.
+Policy checks that run before any fix is applied.
 Each finding is evaluated through an explicit gate sequence and receives
 a structured DecisionTrace documenting inputs, gate results, and final action.
 
@@ -207,8 +207,7 @@ def _smallest_unblocking_action(inputs: PolicyInputs) -> Optional[str]:
         return "Keep preview_only or raise confidence via stronger signal before enabling auto-apply."
     if inputs.confidence < SEC001_CONFIDENCE_THRESHOLD:
         return (
-            "Review finding manually, or lower the confidence threshold "
-            "via a configurable policy layer in a future release."
+            "Review manually or lower the confidence threshold."
         )
     return None
 
@@ -382,8 +381,7 @@ def evaluate_finding_policy(finding_id: str, inputs: PolicyInputs) -> DecisionTr
         else:
             rationale = (
                 f"Confidence {inputs.confidence:.2f} is below the {threshold:.2f} "
-                f"auto-apply threshold; review manually or adjust threshold in a future "
-                f"configurable policy layer."
+                f"auto-apply threshold; review manually or adjust the confidence threshold."
             )
     elif not g_env:
         rationale = (

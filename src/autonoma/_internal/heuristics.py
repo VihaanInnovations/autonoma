@@ -10,9 +10,37 @@ import re
 from typing import List, Dict, Any, Optional, Set
 from pathlib import Path
 
-from .ast_engine import ASTEngine
+from .ast_engine import ASTEngine, _is_placeholder_value
 from ..decisions import DecisionOutcome, RefusalReason, AnalysisResult
 from ..audit import truncate_secret, detect_provider, generate_fingerprint
+
+
+# FIX 6: Docker service environment variable keys that indicate CI service defaults
+_CI_SERVICE_KEYS = frozenset([
+    "POSTGRES_USER", "POSTGRES_DB", "POSTGRES_PASSWORD",
+    "MYSQL_ROOT_PASSWORD", "MYSQL_DATABASE", "MYSQL_USER", "MYSQL_PASSWORD",
+    "REDIS_PASSWORD", "MONGO_INITDB_ROOT_USERNAME", "MONGO_INITDB_ROOT_PASSWORD",
+])
+
+# File path substrings that indicate a CI/CD context
+_CI_PATH_MARKERS = (".github/", ".gitlab-ci.yml", "docker-compose", "ci/")
+
+
+def _is_ci_context(file_path: str) -> bool:
+    """Return True if this file is in a CI/CD context."""
+    p = file_path.replace("\\", "/").lower()
+    return any(m.lower() in p for m in _CI_PATH_MARKERS)
+
+
+def _has_docker_service_context(lines: list, line_idx: int, window: int = 30) -> bool:
+    """Return True if any CI docker service key appears within window lines of line_idx."""
+    start = max(0, line_idx - window)
+    end = min(len(lines), line_idx + window + 1)
+    for line in lines[start:end]:
+        upper = line.upper()
+        if any(key in upper for key in _CI_SERVICE_KEYS):
+            return True
+    return False
 
 
 def _file_ext(file_path: str) -> str:
@@ -291,6 +319,10 @@ class HeuristicsEngine:
             lines = content.split('\n')
 
             for i, line in enumerate(lines):
+                # FIX 1: Skip GitHub Actions variable references — not hardcoded secrets
+                if "${{" in line and ("secrets." in line or "github." in line):
+                    continue
+
                 for rule in self.patterns:
                     # Skip rules that don't apply to this extension
                     if ext not in rule.get("extensions", set()):
@@ -323,6 +355,19 @@ class HeuristicsEngine:
                                     break
                             if self._is_metadata_variable(var_part):
                                 continue
+                            # FIX 2: Skip dunder metadata (e.g. __author__, __version__)
+                            if var_part.startswith("__") and var_part.endswith("__") and len(var_part) > 4:
+                                continue
+                            # FIX 5: Skip known placeholder/fake values
+                            if _is_placeholder_value(secret_val_part):
+                                continue
+
+                            # FIX 6: Downgrade YAML CI docker service blocks to LOW
+                            severity = rule["severity"]
+                            if (ext in {".yaml", ".yml"}
+                                    and _is_ci_context(file_path)
+                                    and _has_docker_service_context(lines, i)):
+                                severity = "low"
 
                             issues.append({
                                 "id": rule["id"],
@@ -331,7 +376,7 @@ class HeuristicsEngine:
                                 "end_col_offset": match.end(),
                                 "message": rule["message"],
                                 "type": rule["type"],
-                                "severity": rule["severity"],
+                                "severity": severity,
                                 "source": "heuristics_regex",
                                 "pattern_type": rule.get("pattern_type", "unknown"),
                                 "var_name": var_part,

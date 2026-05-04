@@ -1,8 +1,8 @@
 """
 Autonoma — Analysis Engine
 
-Orchestrates: gather files → scan each → collect results.
-Stateless, single-pass, deterministic.
+Runs scans. Finds files, passes them to the scanner, 
+collects results. No state kept between runs.
 """
 import ast
 import os
@@ -103,7 +103,7 @@ class AnalysisReport:
 
 class AnalysisEngine:
     """
-    Orchestrates the full scan pipeline.
+    Runs the scan. Call run() with a path, get a report back.
 
     Usage:
         engine = AnalysisEngine()
@@ -115,12 +115,19 @@ class AnalysisEngine:
         self._scanner = Scanner(allowed_extensions=self._extensions)
         self._config = ConfigManager()
 
+    # Path substrings that identify test files
+    _TEST_PATH_MARKERS = ("tests/", "test_", "_test.py", "conftest.py", "spec/", "fixtures/", "testdata/")
+    # Path substrings that identify documentation files
+    _DOCS_PATH_MARKERS = ("docs/", "docs_src/", "examples/", "tutorial/", "documentation/", "readme")
+
     def run(
         self,
         target: Path,
         exclude_patterns: Optional[List[str]] = None,
         verbose: bool = False,
         threads: int = 1,
+        exclude_tests: bool = True,
+        exclude_docs: bool = False,
     ) -> AnalysisReport:
         """
         Run analysis on a file or directory.
@@ -148,7 +155,7 @@ class AnalysisEngine:
                 pass
 
         # Gather files
-        files = self._gather_files(target, exclude_patterns)
+        files = self._gather_files(target, exclude_patterns, exclude_tests=exclude_tests, exclude_docs=exclude_docs)
 
         # Sort for deterministic ordering
         files.sort()
@@ -278,10 +285,21 @@ class AnalysisEngine:
             issues=unique_issues,
         )
 
-    def _gather_files(self, target: Path, exclude_patterns: List[str]) -> List[Path]:
+    def _gather_files(
+        self,
+        target: Path,
+        exclude_patterns: List[str],
+        exclude_tests: bool = True,
+        exclude_docs: bool = False,
+    ) -> List[Path]:
         """Gather files to analyze, respecting skip dirs and exclude patterns."""
         if target.is_file():
             if _file_ext(str(target)) in self._extensions:
+                rel_str = target.name
+                if exclude_tests and any(m in rel_str for m in self._TEST_PATH_MARKERS):
+                    return []
+                if exclude_docs and any(m in rel_str for m in self._DOCS_PATH_MARKERS):
+                    return []
                 return [target]
             return []
 
@@ -306,11 +324,19 @@ class AnalysisEngine:
                     rel = file_path.relative_to(target)
                     rel_str = rel.as_posix()
                     if any(
-                        fnmatch.fnmatch(rel_str, p) or 
+                        fnmatch.fnmatch(rel_str, p) or
                         fnmatch.fnmatch(rel_str.split('/')[0], p) or
                         fnmatch.fnmatch(file_path.name, p)
                         for p in exclude_patterns
                     ):
+                        continue
+
+                    # FIX 3: Skip test files if requested
+                    if exclude_tests and any(m in rel_str for m in self._TEST_PATH_MARKERS):
+                        continue
+
+                    # FIX 4: Skip doc files if requested
+                    if exclude_docs and any(m in rel_str for m in self._DOCS_PATH_MARKERS):
                         continue
                 except ValueError:
                     pass

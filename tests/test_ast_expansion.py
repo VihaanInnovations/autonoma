@@ -128,7 +128,7 @@ def test_strict_refuse_attribute_target(ast_engine):
     assert len(issues) == 0
 
 def test_detect_os_environ_assignment(ast_engine):
-    code = 'os.environ["DB_PASSWORD"] = "secret123"'
+    code = 'os.environ["DB_PASSWORD"] = "hunter2"'
     issues = ast_engine.analyze(code, "test.py")
     
     assert len(issues) == 1

@@ -8,9 +8,8 @@
 
 **Autonoma detects hardcoded secrets and replaces them with `os.environ[...]` references using AST rewrites.** Changes are applied only when the rewrite is deterministic and semantically-preserving.
 
-- **AST-Based**: Rewrites use the parsed syntax tree, not pattern matching on raw text.
-- **Local & Private**: No network calls or external dependencies.
-- **CI/CD Ready**: Idempotent, minimal diffs, and zero-noise operation.
+Rewrites use the parsed syntax tree — not regex on raw text. 
+Runs locally with no network calls. Works in CI with idempotent, minimal diffs.
 
 ![Autonoma Demo](docs/Animation.gif)
 
@@ -24,7 +23,7 @@ Hardcoded secrets in codebases:
 - teams detect leaks but avoid auto-fix tools because they are unsafe
 
 Most tools detect them.  
-Autonoma fixes them **only when the rewrite is deterministic and semantically-preserving**.
+Autonoma **only touches what it can prove is safe to change.**
 
 ---
 
@@ -136,7 +135,7 @@ autonoma fix src/ --report-out audit.json
 > The `fix` command exits `1` whenever it found secrets before attempting remediation, regardless of whether the rewrite succeeded. This is intentional: CI pipelines should flag the commit where secrets were introduced, even after auto-fix. Run `autonoma scan` afterward to confirm the repo is clean.
 
 ### history-scan
-Analyzes git history for secrets that were added and subsequently removed or modified.
+Scans git history for secrets that were committed and later removed or changed.
 
 > [!NOTE]
 > **Detection only.** This command does not rewrite git history or modify commits.
@@ -201,9 +200,7 @@ Refused findings are reported in the JSON output and cause a non-zero exit in CI
 
 ## CI/CD Features
 
-- **Idempotent**: Re-running on an already-fixed file makes no changes.
-- **Format-preserving**: Rewrites keep original indentation and surrounding comments intact.
-- **Import-aware**: Adds `import os` only when absent; avoids duplicate imports.
+Re-running on a clean file makes no changes. Rewrites keep original indentation and comments. import os is added only if it's missing.
 
 ## Integration & CI/CD
 
