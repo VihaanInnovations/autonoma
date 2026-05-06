@@ -25,7 +25,7 @@ Precision improvement release — false positive rate reduced from ~89% to ~14%.
 - **--exclude-docs / --include-docs flags**: Opt-in docs exclusion available 
   on scan and fix commands.
 - **Precision measurement harness**: bench/ directory with four scripts —
-  measure_precision.py, sample_findings.py, auto_classify.py, compute_precision.py.
+  measure_precision.py, sample_findings.py, suggest_labels.py, compute_precision.py.
   Measures real-world precision against canonical repos.
 
 ### Fixed

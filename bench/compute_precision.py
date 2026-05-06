@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
 """
-Compute precision from bench/findings_sample.csv where the 'classification' column is filled.
+Compute precision from human-reviewed findings.
 
-Classification values accepted:
-  TP              — true positive
-  FP              — false positive (no category)
-  FP:<category>   — false positive with category label
-                    e.g. FP:FP_gha, FP:FP_dunder, FP:FP_test,
-                         FP:FP_doc, FP:FP_placeholder, FP:FP_pattern
+Precision is computed from human_label/classification only.
+suggested_label is advisory and ignored.
 
+Label column priority:
+  1. human_label   — authoritative (filled by human reviewer)
+  2. classification — backward compat with pre-suggest_labels.py CSVs
+  suggested_label is NEVER used for precision.
+
+Accepted human labels:
+  TP_REAL, TP_TEST          → true positive
+  FP_DOC, FP_PLACEHOLDER,
+  FP_PATTERN, FP_NONSECRET,
+  FP_GHA, FP_DUNDER,
+  FP_TEST                   → false positive
+  UNKNOWN, REVIEW           → skipped (not counted)
+
+Legacy labels (backward compat):
+  TP                        → true positive
+  FP, FP:<category>         → false positive
+
+Reads:   positional arg or bench/findings_sample.csv
 Writes:  bench/precision_report.md
-Prints:  same content to stdout
 """
 import csv
 import sys
@@ -21,23 +34,44 @@ BENCH_DIR = Path(__file__).parent
 INPUT_CSV = Path(sys.argv[1]) if len(sys.argv) > 1 else BENCH_DIR / "findings_sample.csv"
 OUTPUT_MD = BENCH_DIR / "precision_report.md"
 
+_TP_LABELS = {"TP_REAL", "TP_TEST", "TP"}
+_SKIP_LABELS = {"UNKNOWN", "REVIEW", ""}
 
-def parse_classification(raw: str):
+# FP labels (canonical + legacy prefix)
+def _is_fp_label(s: str) -> tuple[bool, str]:
+    """Return (is_fp, category). category is empty string for non-FP."""
+    upper = s.upper()
+    if upper.startswith("FP_") or upper == "FP_NONSECRET":
+        return True, s
+    if upper == "FP":
+        return True, "uncategorized"
+    if upper.startswith("FP:"):
+        return True, s[3:].strip() or "uncategorized"
+    return False, ""
+
+
+def resolve_label(row: dict) -> str:
+    """Return the effective label for a row, ignoring suggested_label."""
+    human = row.get("human_label", "").strip()
+    if human:
+        return human
+    return row.get("classification", "").strip()
+
+
+def parse_label(raw: str) -> tuple[bool | None, bool | None, str]:
     """
     Return (is_tp, is_fp, fp_category).
-    Unrecognised values are skipped (returns None, None, None).
+    Returns (None, None, '') for skipped/unrecognised rows.
     """
-    s = raw.strip().upper()
-    if s == "TP":
-        return True, False, None
-    if s.startswith("FP"):
-        remainder = raw.strip()[2:]  # keep original case for category
-        if remainder.startswith(":"):
-            category = remainder[1:].strip() or "uncategorized"
-        else:
-            category = "uncategorized"
-        return False, True, category
-    return None, None, None
+    s = raw.strip()
+    if not s or s.upper() in _SKIP_LABELS:
+        return None, None, ""
+    if s.upper() in _TP_LABELS:
+        return True, False, ""
+    is_fp, cat = _is_fp_label(s)
+    if is_fp:
+        return False, True, cat
+    return None, None, ""
 
 
 def precision(tp: int, fp: int) -> str:
@@ -47,37 +81,29 @@ def precision(tp: int, fp: int) -> str:
     return f"{tp / total:.1%}"
 
 
-def main():
+def main() -> None:
     if not INPUT_CSV.exists():
-        print(f"ERROR: {INPUT_CSV} not found. Run sample_findings.py first.", file=sys.stderr)
+        print(f"ERROR: {INPUT_CSV} not found.", file=sys.stderr)
         sys.exit(1)
 
     with open(INPUT_CSV, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
 
-    classified_rows = [r for r in rows if r.get("classification", "").strip()]
-    skipped = len(rows) - len(classified_rows)
-
-    if not classified_rows:
-        print(
-            "ERROR: No rows have a 'classification' value. "
-            "Fill the classification column in findings_sample.csv first.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # Accumulators
     overall_tp = overall_fp = 0
     by_rule: dict = defaultdict(lambda: {"tp": 0, "fp": 0})
     by_repo: dict = defaultdict(lambda: {"tp": 0, "fp": 0})
     fp_categories: dict = defaultdict(int)
-    unrecognised = 0
+    skipped = unrecognised = 0
 
-    for r in classified_rows:
-        is_tp, is_fp, fp_cat = parse_classification(r["classification"])
+    for r in rows:
+        label = resolve_label(r)
+        is_tp, is_fp, fp_cat = parse_label(label)
         if is_tp is None:
-            unrecognised += 1
+            if label == "":
+                skipped += 1
+            else:
+                unrecognised += 1
             continue
         rule_id = r.get("rule_id", "unknown")
         repo = r.get("repo", "unknown")
@@ -91,10 +117,17 @@ def main():
             by_repo[repo]["fp"] += 1
             fp_categories[fp_cat] += 1
 
-    lines = []
+    classified = overall_tp + overall_fp
+
+    lines: list[str] = []
     lines.append("# Precision Report")
     lines.append("")
-    lines.append(f"**Classified:** {overall_tp + overall_fp}  ")
+    lines.append(
+        "_Precision is computed from human_label/classification only. "
+        "suggested_label is advisory and ignored._"
+    )
+    lines.append("")
+    lines.append(f"**Classified:** {classified}  ")
     if skipped:
         lines.append(f"**Unclassified (skipped):** {skipped}  ")
     if unrecognised:
@@ -104,7 +137,6 @@ def main():
     lines.append(f"**Overall Precision:** {precision(overall_tp, overall_fp)}")
     lines.append("")
 
-    # By rule_id
     lines.append("## Precision by Rule ID")
     lines.append("")
     lines.append("| Rule ID | TP | FP | Total | Precision |")
@@ -117,7 +149,6 @@ def main():
         )
     lines.append("")
 
-    # By repo
     lines.append("## Precision by Repo")
     lines.append("")
     lines.append("| Repo | TP | FP | Total | Precision |")
@@ -130,13 +161,11 @@ def main():
         )
     lines.append("")
 
-    # FP category breakdown
     lines.append("## FP Category Breakdown")
     lines.append("")
     lines.append(
-        "_Categorise FPs as `FP:<category>` in the classification column. "
-        "Known categories: `FP_gha`, `FP_dunder`, `FP_test`, `FP_doc`, "
-        "`FP_placeholder`, `FP_pattern`._"
+        "_Canonical FP labels: `FP_GHA`, `FP_DUNDER`, `FP_TEST`, `FP_DOC`, "
+        "`FP_PLACEHOLDER`, `FP_PATTERN`, `FP_NONSECRET`._"
     )
     lines.append("")
     if fp_categories:
@@ -150,7 +179,6 @@ def main():
     lines.append("")
 
     report = "\n".join(lines) + "\n"
-
     OUTPUT_MD.write_text(report, encoding="utf-8")
     print(report)
     print(f"Report written to: {OUTPUT_MD}", file=sys.stderr)
