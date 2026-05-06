@@ -10,7 +10,12 @@ import re
 from typing import List, Dict, Any, Optional, Set
 from pathlib import Path
 
-from .ast_engine import ASTEngine, _is_placeholder_value
+from .ast_engine import (
+    ASTEngine,
+    _is_placeholder_value,
+    _looks_like_identifier_or_word,
+    _mirrors_variable_name,
+)
 from ..decisions import DecisionOutcome, RefusalReason, AnalysisResult
 from ..audit import truncate_secret, detect_provider, generate_fingerprint
 
@@ -360,6 +365,11 @@ class HeuristicsEngine:
                                 continue
                             # FIX 5: Skip known placeholder/fake values
                             if _is_placeholder_value(secret_val_part):
+                                continue
+                            # Value-side gates: skip plain words and name-mirroring values
+                            if _looks_like_identifier_or_word(secret_val_part):
+                                continue
+                            if _mirrors_variable_name(var_part, secret_val_part):
                                 continue
 
                             # FIX 6: Downgrade YAML CI docker service blocks to LOW

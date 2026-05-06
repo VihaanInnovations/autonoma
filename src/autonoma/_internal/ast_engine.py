@@ -1,6 +1,7 @@
 """Detect hardcoded secrets using native Python AST."""
 import ast
 import hashlib
+import re
 from typing import List, Dict, Any, Optional, Set
 import logging
 
@@ -33,6 +34,52 @@ def _is_placeholder_value(value: str) -> bool:
         return False
     lower = value.lower().strip()
     return any(p in lower for p in _PLACEHOLDER_SUBSTRINGS)
+
+
+# Plain word values that are never real secrets regardless of variable name.
+_PLAIN_WORD_VALUES: frozenset = frozenset({
+    # HTTP methods
+    "post", "get", "put", "patch", "delete", "head", "options",
+    # Common non-secret literals
+    "token", "key", "apikey", "api_key", "secret", "password", "passwd",
+    "set-password", "set_password", "bearer",
+})
+
+
+def _looks_like_identifier_or_word(value: str) -> bool:
+    """Return True if value is a plain word/identifier unlikely to be a real secret."""
+    v = value.strip()
+    if not v:
+        return True
+    lower = v.lower()
+    # Known non-secret literals (HTTP methods, common keyword-style values)
+    if lower in _PLAIN_WORD_VALUES:
+        return True
+    # Two-word lowercase phrase: Python operators ("is not"), SQL ("not in"), etc.
+    if re.match(r'^[a-z]+ [a-z]+$', lower):
+        return True
+    # Underscore-prefixed Python identifier (e.g. _password_reset_token).
+    # Values like these are key references, not credential values.
+    if v.startswith('_') and re.match(r'^[_a-zA-Z][a-zA-Z_]*$', v):
+        return True
+    return False
+
+
+def _mirrors_variable_name(name: str, value: str) -> bool:
+    """Return True if value closely mirrors the variable name after normalization.
+
+    Catches patterns like apiKey="apiKey" and tokenUrl="token".
+    """
+    def _norm(s: str) -> str:
+        # Collapse camelCase and strip non-alphanumeric characters
+        s = re.sub(r'([A-Z])', lambda m: m.group(0).lower(), s)
+        return re.sub(r'[^a-z0-9]', '', s)
+
+    n = _norm(name)
+    v = _norm(value)
+    if not v or not n:
+        return False
+    return v == n or v in n or n in v
 
 
 class SecretVisitor(ast.NodeVisitor):
@@ -186,9 +233,13 @@ class ASTEngine:
     def _collect_issue(self, node, value_node, check_name, original_name, issues, is_environ=False):
 
         val = getattr(value_node, 'value', None)
-        # FIX 5: Skip known placeholder/fake values
-        if isinstance(val, str) and _is_placeholder_value(val):
-            return
+        if isinstance(val, str):
+            if _is_placeholder_value(val):
+                return
+            if _looks_like_identifier_or_word(val):
+                return
+            if _mirrors_variable_name(check_name, val):
+                return
         
         check_name_lower = check_name.lower()
         is_password = any(k in check_name_lower for k in ['password', 'passwd', 'pwd'])
