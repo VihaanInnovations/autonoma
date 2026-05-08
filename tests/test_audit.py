@@ -24,9 +24,9 @@ class MockFixOutcome:
     reason: str = None
 
 def test_generate_fingerprint():
-    assert generate_fingerprint("foo") == "sha256:" + hashlib.sha256("foo".encode()).hexdigest()[:16]
-    assert generate_fingerprint(None) == "sha256:e3b0c44298fc1c14"
-    assert generate_fingerprint("") == "sha256:e3b0c44298fc1c14"
+    assert generate_fingerprint("foo") == "sha256:" + hashlib.sha256("foo".encode()).hexdigest()[:24]
+    assert generate_fingerprint(None) == "sha256:e3b0c44298fc1c149afbf4c8"
+    assert generate_fingerprint("") == "sha256:e3b0c44298fc1c149afbf4c8"
 
 def test_truncate_secret():
     # Long strings (>12)

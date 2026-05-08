@@ -10,9 +10,9 @@ False positives that must NOT produce SEC002:
   apiKey = "apiKey"
 
 True positives that MUST still produce SEC002:
-  api_key = "sk_fake_benchmark_token_alpha_1234567890"
-  github_token = "ghp_fake_benchmark_token_testing_only_abcdef123456"
-  auth_token = "fake.jwt.benchmark_signature_token_abcdefghijklmnopqrstuvwxyz""
+  api_key = "stk_live_51N7ZQyqI7JBjRSfFxEJqNzgk51N7"
+  github_token = "ghp_abcdefghijklmnopqrstuvwxyz123456"
+  auth_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyIn0.abc"
 """
 import pytest
 
@@ -39,10 +39,10 @@ from autonoma._internal.heuristics import HeuristicsEngine
     ("abc", False),
     ("Secret", True),
     # NOT identifier-like (contains digits or special chars)
-    ("sk_fake_benchmark_token_alpha_1234567890", False),
-    ("ghp_fake_benchmark_token_testing_only_abcdef123456", False),
-    ("fake.jwt.benchmark_signature_token_abcdefghijklmnopqrstuvwxyz", False),
-    ("FAKE_BENCHMARK_ACCESS_TOKEN_abcdefghijklmnopqrstuvwxyz", False),
+    ("stk_live_51N7ZQyqI7JBjRSfFxEJqNzgk", False),
+    ("ghp_abcdefghijklmnopqrstuvwxyz123456", False),
+    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", False),
+    ("AIzaSyD_abc123XYZ", False),
 ])
 def test_looks_like_identifier_or_word(value, expected):
     assert _looks_like_identifier_or_word(value) == expected, (
@@ -56,9 +56,9 @@ def test_looks_like_identifier_or_word(value, expected):
     ("API_KEY", "api_key", True),
     ("MyToken", "mytoken", True),
     # No mirror
-    ("github_token", "fake_github_benchmark_token_abcdefghijklmnopqrstuvwxyz123456", False),
-    ("api_key", "fake_stripe_benchmark_secret_51N7ZQ", False),
-    ("auth_token", "fake_jwt_benchmark_header_payload_signature", False),
+    ("github_token", "ghp_abcdefghijklmnopqrstuvwxyz123456", False),
+    ("api_key", "sk_live_51N7ZQ", False),
+    ("auth_token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", False),
 ])
 def test_mirrors_variable_name(name, value, expected):
     assert _mirrors_variable_name(name, value) == expected, (
@@ -96,16 +96,16 @@ def test_sec002_false_positive_suppressed(code, description):
 
 @pytest.mark.parametrize("code,description", [
     (
-        'api_key = "stk_live_zQyqI7JBjRSfFxEJqNzgk51N7A8LmP"',
-        'Stripe-like API key',
+        'api_key = "stk_live_51N7ZQyqI7JBjRSfFxEJqNzgk51N7"',
+        'Stripe live key',
     ),
     (
-        'github_token = "ght_qwertyuiopasdfghjklzxcvbnm123456789"',
-        'GitHub-like token',
+        'github_token = "ghp_abcdefghijklmnopqrstuvwxyz123456"',
+        'GitHub personal access token',
     ),
     (
-        'auth_token = "jwt_header_payload_signaturexyz987654"',
-        'JWT-like token',
+        'auth_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyIn0.abc123"',
+        'JWT token',
     ),
 ])
 def test_sec002_true_positive_still_fires(code, description):

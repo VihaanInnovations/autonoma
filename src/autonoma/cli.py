@@ -169,7 +169,7 @@ def _run_analyze_pipeline(
                     trace = _all_traces.get((fr.file, issue.get("line"), rule_id))
 
                     detect_findings.append(DetectFinding(
-                        file=fr.file,
+                        file=fr.file.replace("\\", "/"),
                         line=issue.get("line"),
                         col=issue.get("col_offset"),
                         pattern_type=pattern_type,

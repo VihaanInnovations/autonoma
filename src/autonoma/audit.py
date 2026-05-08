@@ -83,8 +83,8 @@ def detect_provider(secret_value: str) -> str:
 def generate_fingerprint(secret_value: str) -> str:
     """Generate a stable, unsalted identity fingerprint from the raw secret."""
     if not secret_value:
-        return "sha256:e3b0c44298fc1c14"
-    return "sha256:" + hashlib.sha256(secret_value.encode('utf-8')).hexdigest()[:16]
+        return "sha256:e3b0c44298fc1c149afbf4c8"
+    return "sha256:" + hashlib.sha256(secret_value.encode('utf-8')).hexdigest()[:24]
 
 
 def truncate_secret(secret_value: str) -> str:
