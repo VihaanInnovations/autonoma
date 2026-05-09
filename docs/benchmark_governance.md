@@ -14,12 +14,7 @@ This document defines the benchmark governance rules for Autonoma benchmark
 generation, execution, reporting, and detector evolution.
 
 The goal of these rules is to preserve:
-
-- reproducibility,
-- contamination resistance,
-- methodological stability,
-- reporting integrity,
-- and comparability across benchmark versions.
+  reproducibility, contamination resistance, methodological stability, reporting integrity and comparability across benchmark versions.
 
 These rules apply to all SEC002 benchmark runs unless explicitly superseded by
 a versioned governance update. Governance updates are themselves dated entries
@@ -226,8 +221,6 @@ credential values to public infrastructure.
 
 ## 6. Contamination Controls
 
-Benchmark contamination avoidance is a primary design goal.
-
 The following controls are required:
 
 - removal of public remotes before seeding,
@@ -398,7 +391,7 @@ Until independent verification exists:
   and must not be implied.
 - The redacted manifest, published seeds, and open-source generator and
   seeder are intended to make independent reproduction straightforward
-  for any external reviewer who chooses to verify.
+  for any external reviewer.
 
 When the project gains a second maintainer or a regular external reviewer,
 this section will be updated, and the freeze/invalidation authority model

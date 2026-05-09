@@ -46,7 +46,7 @@ Measured across 5 real-world repos (requests, flask, gitleaks, trufflehog, fasta
 
 ## 0.1.7
 
-Unblocks real-world adoption with broader file-type coverage and a better fix UX.
+Broader file-type coverage and improved dry-run output.
 
 ### Added
 - **Multi-format scanning**: `.env`, `.yaml`, `.yml`, `.json`, `.toml`, `.tf`, `.sh`, `.config`, `.ini`, `.properties` are now scanned by default — no flags required.
@@ -64,7 +64,7 @@ Unblocks real-world adoption with broader file-type coverage and a better fix UX
 Documentation updates and parser reliability fixes.
 
 ### Added
-- **README Refinements**: Added "When NOT to use Autonoma" section to set strict technical boundaries.
+- **README Refinements**: Added "When NOT to use Autonoma" section.
 - **CI Lifecycle Behavior**: Documented idempotent behavior and exit code semantics for CI pipelines.
 - **Visual Demo**: Integrated Animation.gif into documentation root to demonstrate behavior visually.
 
@@ -79,7 +79,7 @@ Documentation updates and parser reliability fixes.
 
 ## 0.1.4
 
-Release featuring pre-commit integration and safe remediation enhancements.
+Adds pre-commit integration and tightens the refusal-first safety model.
 
 ### Added
 - **Pre-commit hook integration**: Native support for pre-commit via `hooks.yaml`.

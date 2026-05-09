@@ -1,5 +1,22 @@
 # SEC002 Recall Evaluation Report (Baseline v1)
 
+> **Revision notice — 2026-05-09.**
+> This report has been revised following post-baseline miss-taxonomy analysis
+> (see Section 15). All measured recall values and per-family results are
+> unchanged. Interpretive updates address:
+> (a) `pem_private` — reclassified as FAMILY_OUT_OF_SCOPE; the 0/9 result
+> reflects the absence of a registered SEC002 rule, compounded by multiline
+> parser limitations, not an unresolved detection gap;
+> (b) Markdown format — the 0/3 result is EXTENSION_EXCLUDED (`.md` absent
+> from `DEFAULT_EXTENSIONS`), not evidence of a parser coverage gap;
+> (c) benchmark-optimization framing removed from the abstract, Section 11,
+> and Section 13;
+> (d) Section 15 added, summarising post-baseline miss-taxonomy findings from
+> the ten-repo expansion (benchmark v2, 330 controls).
+> The v1 baseline numbers (53.5% strict recall, per-family and per-format
+> results, Wilson intervals) are historical artifacts and have not been
+> modified.
+
 ## Abstract
 
 We evaluate Autonoma's SEC002 detection rule against a deterministic synthetic-control
@@ -14,12 +31,9 @@ can be measured rigorously. The benchmark is fully reproducible from a published
 seed without exposing credential values; methodology, per-family and per-format
 results, and a reproducibility checklist are reported below.
 
-**This report captures the SEC002 recall baseline prior to additional**
-**rule-coverage expansion or entropy-threshold tuning.**
+SEC002 is designed for structured credential detection under precision-oriented
+remediation constraints rather than universal entropy-based secret discovery.
 
-SEC002 is intentionally optimized for structured credential detection under
-precision-oriented remediation constraints rather than universal entropy-based
-secret discovery.
 ---
 
 ## 1. Motivation
@@ -32,38 +46,19 @@ The SEC002 rule targets credential-like secrets such as API keys, access tokens,
 bearer tokens, and other high-risk authentication artifacts.
 
 This evaluation measures SEC002 recall against a reproducible synthetic-control
-benchmark designed to:
+benchmark designed to avoid benchmark contamination and avoid real credential exposure, support deterministic reruns and identify family-specific detection gaps.
 
-- avoid benchmark contamination,
-- avoid real credential exposure,
-- support deterministic reruns,
-- and identify family-specific detection gaps.
-
-This report establishes the initial SEC002 recall baseline before additional
-rule-coverage improvements.
+This report establishes the SEC002 recall baseline (v1) against three repositories
+prior to corpus expansion.
 
 ---
 
 ## 2. Benchmark Philosophy
 
-The benchmark prioritizes:
+The benchmark uses deterministic control generation and explicit contamination avoidance; it does
+not attempt to maximize recall through broad entropy heuristics.
 
-- reproducibility,
-- deterministic control generation,
-- contamination avoidance,
-- and explicit family-level analysis.
-
-The benchmark intentionally avoids:
-
-- committing realistic provider credentials to public Git repositories,
-- heuristic auto-labeling,
-- hidden benchmark mutation,
-- and undocumented synthetic artifacts.
-
-The benchmark does NOT attempt to maximize recall scores through broad entropy
-heuristics or generic pattern expansion. Instead, the goal is to measure
-structured credential detection behavior under precision-oriented constraints.
-Broad entropy-only detection is excluded from SEC002 unless its precision
+Instead, the goal is to measure structured credential detection behavior under precision-oriented constraints. Broad entropy-only detection is excluded from SEC002 unless its precision
 impact can be measured against a separate labeled false-positive corpus.
 
 ---
@@ -76,27 +71,32 @@ Synthetic controls are generated deterministically from:
 - credential family templates,
 - and seeded format renderers.
 
-### 3.1 Safe alias-prefix synthetic credentials
+### 3.1 Alias-prefix synthetic credentials (v1 baseline)
 
-Synthetic controls use safe alias-prefix variants derived from real provider
-credential structures.
+**Note:** The v1 baseline used safe alias-prefix variants of real provider
+credential structures. Benchmark governance v1.0 (Section 5, effective 2026-05-08)
+supersedes this design and requires real provider prefixes with cryptographically
+inert payloads for future benchmark versions. The v1 alias-prefix numbers are
+preserved as historical artifacts.
 
-Examples:
+The v1 aliases used were:
+
 - `sk_live_` → `stk_live_`
 - `ghp_` → `ght_`
 - `AKIA` → `AXIA`
 - `AIza` → `GIZA`
 - `xoxb-` → `xotb-`
 
-This design intentionally avoids:
+This design avoided:
 - GitHub push-protection activation,
 - provider abuse-system ingestion,
 - public credential-index contamination,
-- and accidental publication of detector-triggering live-prefix artifacts.
+- and accidental publication of live-prefix credential files.
 
-The benchmark therefore evaluates structural credential detection behavior
-under safe alias-prefix substitution rather than exact provider-literal
-matching.
+The alias-prefix design evaluates structural credential detection behavior
+under safe alias substitution rather than exact provider-literal matching.
+Under governance v1.0, future benchmark versions must use real prefixes with
+inert payloads.
 
 The generator produces:
 
@@ -108,7 +108,7 @@ The generator produces:
 | `google_api`       | `GIZA` + 35 base62/`-_` chars                   | Inert payload                                      |
 | `slack_bot`        | `xotb-` + numeric-numeric-secret                | Three-segment Slack bot token shape                |
 | `jwt`              | Three-segment HS256 JWT                         | Header decodes to valid JSON                       |
-| `pem_private`      | `-----BEGIN RSA PRIVATE KEY-----` envelope      | Wrapped base64 body, ~2048-bit equivalent         |
+| `pem_private`      | `-----BEGIN RSA PRIVATE KEY-----` envelope      | Wrapped base64 body, ~2048-bit equivalent          |
 | `generic_bearer`   | 40-char base64url, no prefix                    | Tests prefix-less detection                        |
 | `opaque_*`         | High-entropy strings, no provider prefix        | Tests prefix-less detection                        |
 
@@ -312,14 +312,28 @@ inconsistently despite having recognizable prefixes or structural signals. This
 tier is the primary target for rule-coverage improvements; misses are
 concentrated in specific file formats rather than spread evenly.
 
-**Tier 3 — Absent or near-zero detection (0% – 22%).** PEM private keys
-(0 / 9) and the prefix-less entropy-only families (0.0% to 22.2%) are not
-meaningfully covered. PEM is the most distinctive credential pattern in this
-benchmark — `-----BEGIN ... PRIVATE KEY-----` envelopes are unambiguous — and
-zero detection across nine controls in three repositories indicates that either
-no rule exists for PEM blocks in SEC002, or an existing rule is broken. This is 
-treated as a high-priority coverage or routing gap pending
-root-cause confirmation.
+**Tier 3 — Absent or near-zero detection (0% – 22%).** `pem_private` (0/9) and
+the prefix-less entropy-only families (0.0% to 22.2%) are not meaningfully
+covered.
+
+For `pem_private`: post-baseline analysis (see Section 15) established that no
+detection rule for PEM private-key envelopes exists in SEC002 or any other
+current Autonoma rule. The 0/9 result is the expected outcome given this absence.
+Three compounding factors prevent detection even if a rule were to be added
+incrementally to SEC002: Python triple-quoted strings (`"""..."""`) are not matched
+by the single-quote regex `['"][^'"]+['"]`; YAML block scalars (`|`) render the
+key material on subsequent indented lines, invisible to single-line `key: value`
+pattern matching; and AST-safe deterministic remediation for multiline PEM blobs
+is not currently implemented and would be high-risk. This family is treated as
+FAMILY_OUT_OF_SCOPE for SEC002 baseline v1. Adding PEM detection, if warranted,
+requires a separate rule family under the governance v1.0 Section 7.5 process; it
+does not retroactively change the scope or denominator of this benchmark version.
+
+For the prefix-less entropy families (`opaque_random_cred`, `generic_bearer`,
+`opaque_session_token`): the low recall is consistent with SEC002's intentional
+design. These families are reported here to quantify the scoping cost, not as
+gaps requiring immediate remediation. See Section 15 for the post-baseline
+miss-taxonomy breakdown of these families.
 
 ---
 
@@ -336,18 +350,25 @@ Per-format breakdown:
 | `markdown`|  0 / 3   |   0.0%   |  0.0% –  56.2%      |
 
 Python files produced the highest recall, consistent with a detector developed
-primarily against Python source. Markdown produced 0/3 detection; the sample
-size is too small for a confident point estimate (Wilson upper bound 56.2%),
-but the direction is consistent with reduced parser coverage in non-source
-formats. JSON and YAML detection at ~43% indicates a real format-handling gap,
-since both formats are common credential-storage targets in production code.
+primarily against Python source. JSON and YAML detection at ~43% indicates a
+real format-handling gap, since both formats are common credential-storage
+targets in production code.
 
-The format gradient suggests that parser coverage, format-specific handling,
-and extension routing significantly affect detector performance. Several
-Tier 2 family misses reduce to format issues rather than family issues; for
-example, three of five Google API key misses occur in `.env` files,
-indicating a likely extension-routing or `.env`-specific parsing gap rather
-than a `AIza`-prefix detection failure.
+Markdown produced 0/3 detection. Post-baseline analysis (see Section 15)
+established that `.md` is completely absent from both `DEFAULT_EXTENSIONS` and
+`ALL_SUPPORTED_EXTENSIONS` in `src/autonoma/_internal/heuristics.py` — files
+are excluded before any scanner or parser runs. The 0/3 result is
+EXTENSION_EXCLUDED (an architectural scope decision), not evidence of a parser
+coverage gap. The three seeded Markdown controls remain in the strict-recall
+denominator; EXTENSION_EXCLUDED is an analytical classification of the miss
+cause, not a retroactive scope exclusion.
+
+The format gradient on Python, YAML, JSON, and env suggests that parser
+coverage, format-specific handling, and extension routing materially affect
+detector performance for in-scope formats. Several Tier 2 family misses reduce
+to format issues; for example, three of five Google API key misses occur in
+`.env` files, indicating a likely extension-routing or `.env`-specific parsing
+gap rather than a prefix-detection failure.
 
 ---
 
@@ -355,27 +376,37 @@ than a `AIza`-prefix detection failure.
 
 The evaluation surfaced the following SEC002 limitations:
 
-- **PEM private-key detection produced 0 / 9 recall in this evaluation.**
-  This indicates either absent PEM-family rule coverage or a failure in the
-  current PEM detection path. Root-cause analysis remains ongoing.
+- **`pem_private` family has no registered SEC002 detection rule (0 / 9 recall).**
+  Post-baseline analysis established that no PEM-family rule exists in SEC002
+  or any current Autonoma rule. The 0/9 result is expected given this absence.
+  Three compounding factors would prevent naive extension of existing patterns:
+  triple-quoted Python strings, YAML block scalars, and the absence of
+  AST-safe multiline remediation. This is FAMILY_OUT_OF_SCOPE for SEC002
+  baseline v1. Adding PEM detection requires the governance v1.0 Section 7.5
+  new-rule-family process, including a separate scope document, separate
+  benchmark evaluation, and separate remediation-safety analysis.
 - **Prefix-less high-entropy credentials are not meaningfully detected.**
   `generic_bearer`, `opaque_session_token`, and `opaque_random_cred` recall
   ranges from 0% to 22.2%. This is consistent with SEC002's intentional
-  scoping (see Section 2); these families are reported here to quantify the
-  scoping cost.
+  design; these families are reported here to quantify the scoping cost.
+  Post-baseline miss-taxonomy analysis attributes these misses primarily to
+  KEYWORD_GAP (var_names used by the seeder fall outside the SEC002 keyword
+  sets) rather than to absent value-pattern rules (see Section 15).
 - **Format-specific gaps in JSON, YAML, and `.env` files.** Recall on these
   formats is consistently lower than Python recall, including for credential
-  families that succeed in Python (e.g., GitHub PAT misses concentrated in
-  `.yaml` and `.md`).
-- **Markdown coverage is unverified.** With n=3, no confident claim is
-  possible; the 0/3 result motivates expanded markdown sampling in v0.2.
+  families that succeed in Python.
+- **Markdown files are EXTENSION_EXCLUDED.** `.md` is absent from
+  `DEFAULT_EXTENSIONS`; files are excluded before any scanner or parser runs.
+  The 0/3 result is an architectural boundary, not a parser coverage failure.
+  Expanding Markdown coverage would require a separate extraction strategy
+  and false-positive analysis.
 
 SEC002 should not currently be interpreted as a universal high-entropy
-secret detector. This limitation is partially intentional: broad entropy-only 
-heuristics were excluded from SEC002 to preserve precision and deterministic 
+secret detector. This limitation is partially intentional: broad entropy-only
+heuristics were excluded from SEC002 to preserve precision and deterministic
 remediation behavior. Current performance is strongest for structured,
 provider-shaped, credential-like artifacts — which is consistent with its
-design intent, not in spite of it.
+design intent.
 
 ---
 
@@ -387,8 +418,8 @@ The following limitations affect this benchmark:
   seeder, scanned tool, and recall matcher were all authored by the same
   individual. Independent reproduction is required to rule out correlated
   errors across the toolchain. The redacted manifest, published seed, and
-  open-source generator/seeder/recall scripts are intended to make such
-  reproduction straightforward.
+  open-source generator/seeder/recall scripts are support independent reproduction 
+  of these numbers.
 - **Three-repository sample.** Wide confidence intervals on per-family and
   per-format results. Headline 53.5% recall has a ±10-point CI half-width;
   expansion to 5–10 repositories is required before tightening this claim.
@@ -406,6 +437,11 @@ The following limitations affect this benchmark:
   Autonoma's deliberate preview-only policy in the absence of an environment
   contract; this is a feature of the policy, not a benchmark failure, but
   remediation correctness is gated separately and not measured here.
+- **Alias-prefix controls (v1 only).** This baseline used alias prefixes
+  rather than real provider prefixes. Benchmark governance v1.0 (Section 5)
+  requires real prefixes for future versions. Numbers from v1 and future
+  real-prefix versions are not directly comparable; reconciliation analysis
+  will be required.
 
 ---
 
@@ -413,7 +449,8 @@ The following limitations affect this benchmark:
 
 Future benchmark work:
 
-- expanded repository coverage (target: 10 repos, ~330 controls),
+- expanded repository coverage (target: 10 repos, ~330 controls; completed
+  in benchmark v2 — see Section 15),
 - broader precision evaluation against labeled false-positive corpora,
 - inter-rater labeling for the precision benchmark,
 - remediation correctness evaluation (separately gated on env-contract policy),
@@ -423,14 +460,16 @@ Future benchmark work:
 
 Future detector work:
 
-- PEM-family rule (highest-priority gap, 0/9 baseline),
-- `.env` file extension and JSON/YAML parser coverage,
-- and expanded structured credential coverage for additional providers.
+- `.env` file extension and JSON/YAML parser coverage improvements,
+- expanded structured credential coverage for additional Tier 2 providers,
+- and evaluation of PEM-family detection as a candidate for a separate
+  rule family, subject to the governance v1.0 Section 7.5 process (separate
+  scope document, benchmark evaluation, and remediation-safety analysis
+  required before any recall claim).
 
 Broad entropy heuristics remain intentionally excluded from SEC002 unless
 their precision impact can be measured rigorously against a separate labeled
-false-positive corpus. Improving Tier 3 recall by lowering entropy thresholds
-without precision measurement is explicitly out of scope.
+false-positive corpus.
 
 ---
 
@@ -476,3 +515,106 @@ Seeds and SHAs used in this report:
 Independent reviewers can regenerate the exact same controls from the
 published seed without ever accessing private credential values, and verify
 the recall numbers by repeating steps 1–4.
+
+---
+
+## 15. Post-Baseline Miss Taxonomy Findings
+
+*This section summarises findings from the ten-repo benchmark expansion
+(benchmark v2, 330 controls, 10 repos). It is post-baseline analysis and is
+explicitly secondary to the v1 baseline numbers above. The v1 strict recall
+of 53.5% is unchanged. None of the findings in this section retroactively
+alter the v1 strict-recall denominator or per-family numbers.*
+
+### 15.1 Benchmark v2 overview
+
+The benchmark corpus was expanded to ten repositories and 330 seeded controls
+(33 controls per repo, 30 per family across 11 families). The expanded run
+produced 57.0% strict recall (188 / 330). Per-family and per-repo breakdowns
+are reported separately in `bench/reports/sec002_recall_diagnostic_v2.csv` and
+`bench/reports/sec002_miss_pattern_analysis.md`.
+
+The benchmark v2 numbers are a separate measurement on a different corpus size;
+they are not a revision of the v1 numbers.
+
+### 15.2 Miss-taxonomy categories
+
+The 142 VALUE_NOT_FOUND cases in benchmark v2 were classified using the
+miss-taxonomy defined in `bench/scripts/analyze_misses.py`. The prior
+single-bucket DETECTOR_MISS label has been replaced by three categories
+that reflect distinct failure modes at different layers of the detection
+pipeline:
+
+| Category             | Count | % of Misses | Description                                                    |
+| -------------------- | ----- | ----------- | -------------------------------------------------------------- |
+| EXTENSION_EXCLUDED   |    14 |        9.9% | File type absent from `DEFAULT_EXTENSIONS`; never scanned      |
+| FAMILY_OUT_OF_SCOPE  |    50 |       35.2% | Family not covered by any registered SEC002 rule               |
+| KEYWORD_GAP          |    77 |       54.2% | Value parser-accessible; keyword routing never evaluated it    |
+| PARSER_GAP           |     0 |        0.0% | Parser extraction failed before SEC002 evaluation (in-scope families) |
+| DETECTOR_MISS        |     1 |        0.7% | Keyword routing evaluated value; SEC002 still failed to detect |
+| REMEDIATION_UNSAFE   |     0 |        0.0% | Detection possible; remediation policy blocked                 |
+| BENCHMARK_ARTIFACT   |     0 |        0.0% | Seeding or fingerprinting issue                                |
+
+### 15.3 Architecture/routing failures vs. parser failures vs. true detector failures
+
+The taxonomy distinguishes three fundamentally different failure modes that
+the prior DETECTOR_MISS bucket conflated:
+
+**KEYWORD_GAP (77 cases — architecture/routing failure).**
+The credential value was in a supported file format and the parser extracted
+the value correctly. SEC002 routing never evaluated it because the variable or
+key name assigned by the seeder — e.g., `gh_pat`, `gcp_key`, `api_bearer`,
+`auth_bearer`, `user_session`, `access_session`, `session_jwt` — does not appear
+in any SEC002 keyword pattern list. Fixing KEYWORD_GAP cases requires extending
+the keyword sets, not changing detection logic. Keyword additions require FP
+validation per governance v1.0 Section 7.4 before deployment.
+
+Affected families: `generic_bearer` (23 non-markdown misses),
+`opaque_session_token` (21), `google_api` (12), `jwt` (11),
+`github_pat` (10).
+
+**PARSER_GAP (0 cases — extraction failure).**
+For in-scope families, the parser successfully surfaced all values in supported
+formats. No in-scope family currently produces PARSER_GAP misses. The parser
+limitations documented for `pem_private` (triple-quoted Python strings, YAML
+block scalars) exist but belong to the FAMILY_OUT_OF_SCOPE classification, not
+PARSER_GAP, because the family has no registered SEC002 rule. PARSER_GAP is
+defined for completeness and for future use when in-scope families with multiline
+value formats are added.
+
+**DETECTOR_MISS (1 case — true detection failure).**
+One `opaque_api_secret` control in an ENV file has keyword-matching conditions
+met (`secret` in the var_name) and a parser-accessible value, but SEC002 failed
+to detect it. The likely cause is a value-side gate that rejects values
+containing special characters (`$`, `*`, `@`). This is the only case in the
+330-control corpus where keyword routing evaluated a value but detection failed.
+
+### 15.4 Implications for the v1 baseline interpretation
+
+The KEYWORD_GAP finding revises the interpretation of several v1 Tier 2
+families. Partial recall for `github_pat` (55.6%), `google_api` (44.4%),
+`jwt` (66.7%), `generic_bearer` (11.1%), and `opaque_session_token` (0%)
+in the v1 baseline is explained primarily by keyword-routing failures, not
+absent value-pattern rules. The detector evaluated seedings assigned
+keyword-matching var_names and missed seedings assigned non-keyword var_names.
+This pattern was not visible in the v1 three-family data alone due to the
+small per-family sample (n=9).
+
+The `pem_private` 0/9 result in v1, previously framed as a pending root-cause
+investigation, is now attributed to FAMILY_OUT_OF_SCOPE: no registered SEC002
+rule exists for PEM families, and detection is additionally blocked by
+multiline parser limitations.
+
+The Markdown 0/3 result in v1, previously described as uncertain due to sample
+size, is now attributed to EXTENSION_EXCLUDED: `.md` is absent from
+`DEFAULT_EXTENSIONS`, and files are excluded before any scanner or parser runs.
+The 0/3 result is not informative about parser coverage — it measures only that
+the extension exclusion is in effect.
+
+### 15.5 Source
+
+Full classification detail, per-family breakdown, and per-format breakdowns
+are in `bench/reports/sec002_miss_pattern_analysis.md` and
+`bench/reports/sec002_miss_pattern_analysis.json`, generated by
+`bench/scripts/analyze_misses.py`. The benchmark v2 diagnostic CSV is at
+`bench/reports/sec002_recall_diagnostic_v2.csv`.

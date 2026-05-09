@@ -32,7 +32,7 @@
 | django | 13 | 7 | -6 | 6 |
 | **Total** | **37** | **19** | **-18** | **18** |
 
-Raw finding count changed from 37 to 19 for the original 5 repos.
+No precision claim is made from these raw counts.
 This does not imply measured precision improvement — human label review is required.
 The reduction is consistent with known false-positive patterns being suppressed.
 

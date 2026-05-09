@@ -249,6 +249,17 @@ Refused cases are reported in JSON output and will cause non-zero exit codes in 
 
 ---
 
+## Current limitations
+
+SEC002 currently combines credential value patterns with keyword-conditioned
+routing logic. Credentials assigned to highly atypical variable names may
+not currently be detected.
+
+Autonoma intentionally avoids broad entropy-only secret detection unless
+precision impact can be measured against a labeled false-positive corpus.
+
+---
+
 ## JSON Schema
 
 `autonoma scan` outputs a `detect-only` report to stdout:

@@ -80,7 +80,7 @@ generator.py  →  controls_manifest.json  →  seeder.py  →  seeded local rep
 
 Controls are divided into two categories:
 
-**Vendor-shaped controls** — format-inspired synthetic values with safe alias prefixes.
+**Vendor-shaped controls** — Synthetic values with alias prefixes that approximate real provider credential formats.
 These exercise prefix-keyed detection rules without using any real provider-valid prefix.
 
 | Family | Safe alias prefix | Modeled after |
