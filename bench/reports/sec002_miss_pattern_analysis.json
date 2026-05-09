@@ -1,0 +1,1683 @@
+{
+  "schema_version": "2.0",
+  "generated_at": "2026-05-09T00:39:41.839124+00:00",
+  "source_csv": "G:\\Vithushan\\autonoma-ai.github.io_4\\bench\\reports\\sec002_recall_diagnostic_v2.csv",
+  "taxonomy_note": "DETECTOR_MISS has been split into three categories: KEYWORD_GAP (routing architecture failure \u2014 var_name not in SEC002 keyword sets), PARSER_GAP (extraction failure \u2014 parser could not surface the value), and DETECTOR_MISS (true detection failure \u2014 value reachable and keyword-routing evaluated it, but SEC002 failed to detect).",
+  "summary": {
+    "total_seeded": 330,
+    "total_matched": 188,
+    "total_missed": 142,
+    "strict_recall": 0.5697
+  },
+  "by_category": {
+    "EXTENSION_EXCLUDED": {
+      "count": 14,
+      "pct_of_misses": 0.0986,
+      "description": "File type excluded from DEFAULT_EXTENSIONS; never scanned."
+    },
+    "FAMILY_OUT_OF_SCOPE": {
+      "count": 50,
+      "pct_of_misses": 0.3521,
+      "description": "Family intentionally outside SEC002 scope by design."
+    },
+    "KEYWORD_GAP": {
+      "count": 77,
+      "pct_of_misses": 0.5423,
+      "description": "Value reachable and in scope; keyword routing never evaluated because the var/key name is not in the SEC002 keyword sets. Architectural/routing failure."
+    },
+    "PARSER_GAP": {
+      "count": 0,
+      "pct_of_misses": 0.0,
+      "description": "File and family in scope; parser extraction or syntax routing failed before SEC002 evaluation could occur. Extraction failure."
+    },
+    "DETECTOR_MISS": {
+      "count": 1,
+      "pct_of_misses": 0.007,
+      "description": "Value reachable, in scope, parser-accessible, keyword-routing evaluated it, but SEC002 still failed to detect. True detector failure."
+    },
+    "REMEDIATION_UNSAFE": {
+      "count": 0,
+      "pct_of_misses": 0.0,
+      "description": "Detection possible; safe remediation blocked by policy."
+    },
+    "BENCHMARK_ARTIFACT": {
+      "count": 0,
+      "pct_of_misses": 0.0,
+      "description": "Seeding, path, or fingerprinting issue in benchmark."
+    }
+  },
+  "by_family": {
+    "aws_pair": {
+      "total_seeded": 30,
+      "matched": 29,
+      "missed": 1,
+      "recall": 0.9667,
+      "miss_categories": {
+        "EXTENSION_EXCLUDED": 1
+      }
+    },
+    "generic_bearer": {
+      "total_seeded": 30,
+      "matched": 6,
+      "missed": 24,
+      "recall": 0.2,
+      "miss_categories": {
+        "KEYWORD_GAP": 23,
+        "EXTENSION_EXCLUDED": 1
+      }
+    },
+    "github_pat": {
+      "total_seeded": 30,
+      "matched": 17,
+      "missed": 13,
+      "recall": 0.5667,
+      "miss_categories": {
+        "KEYWORD_GAP": 10,
+        "EXTENSION_EXCLUDED": 3
+      }
+    },
+    "google_api": {
+      "total_seeded": 30,
+      "matched": 16,
+      "missed": 14,
+      "recall": 0.5333,
+      "miss_categories": {
+        "EXTENSION_EXCLUDED": 2,
+        "KEYWORD_GAP": 12
+      }
+    },
+    "jwt": {
+      "total_seeded": 30,
+      "matched": 17,
+      "missed": 13,
+      "recall": 0.5667,
+      "miss_categories": {
+        "KEYWORD_GAP": 11,
+        "EXTENSION_EXCLUDED": 2
+      }
+    },
+    "opaque_api_secret": {
+      "total_seeded": 30,
+      "matched": 28,
+      "missed": 2,
+      "recall": 0.9333,
+      "miss_categories": {
+        "DETECTOR_MISS": 1,
+        "EXTENSION_EXCLUDED": 1
+      }
+    },
+    "opaque_random_cred": {
+      "total_seeded": 30,
+      "matched": 9,
+      "missed": 21,
+      "recall": 0.3,
+      "miss_categories": {
+        "FAMILY_OUT_OF_SCOPE": 21
+      }
+    },
+    "opaque_session_token": {
+      "total_seeded": 30,
+      "matched": 8,
+      "missed": 22,
+      "recall": 0.2667,
+      "miss_categories": {
+        "KEYWORD_GAP": 21,
+        "EXTENSION_EXCLUDED": 1
+      }
+    },
+    "pem_private": {
+      "total_seeded": 30,
+      "matched": 0,
+      "missed": 30,
+      "recall": 0.0,
+      "miss_categories": {
+        "FAMILY_OUT_OF_SCOPE": 29,
+        "EXTENSION_EXCLUDED": 1
+      }
+    },
+    "slack_bot": {
+      "total_seeded": 30,
+      "matched": 29,
+      "missed": 1,
+      "recall": 0.9667,
+      "miss_categories": {
+        "EXTENSION_EXCLUDED": 1
+      }
+    },
+    "stripe": {
+      "total_seeded": 30,
+      "matched": 29,
+      "missed": 1,
+      "recall": 0.9667,
+      "miss_categories": {
+        "EXTENSION_EXCLUDED": 1
+      }
+    }
+  },
+  "by_repo": {
+    "black": {
+      "total_seeded": 33,
+      "matched": 12,
+      "missed": 21,
+      "recall": 0.3636
+    },
+    "celery": {
+      "total_seeded": 33,
+      "matched": 20,
+      "missed": 13,
+      "recall": 0.6061
+    },
+    "django": {
+      "total_seeded": 33,
+      "matched": 18,
+      "missed": 15,
+      "recall": 0.5455
+    },
+    "fastapi": {
+      "total_seeded": 33,
+      "matched": 21,
+      "missed": 12,
+      "recall": 0.6364
+    },
+    "flask": {
+      "total_seeded": 33,
+      "matched": 18,
+      "missed": 15,
+      "recall": 0.5455
+    },
+    "httpx": {
+      "total_seeded": 33,
+      "matched": 18,
+      "missed": 15,
+      "recall": 0.5455
+    },
+    "mypy": {
+      "total_seeded": 33,
+      "matched": 25,
+      "missed": 8,
+      "recall": 0.7576
+    },
+    "pydantic": {
+      "total_seeded": 33,
+      "matched": 18,
+      "missed": 15,
+      "recall": 0.5455
+    },
+    "requests": {
+      "total_seeded": 33,
+      "matched": 17,
+      "missed": 16,
+      "recall": 0.5152
+    },
+    "sqlalchemy": {
+      "total_seeded": 33,
+      "matched": 21,
+      "missed": 12,
+      "recall": 0.6364
+    }
+  },
+  "by_format": {
+    "env": {
+      "total_seeded": 61,
+      "missed": 20,
+      "miss_categories": {
+        "FAMILY_OUT_OF_SCOPE": 8,
+        "DETECTOR_MISS": 1,
+        "KEYWORD_GAP": 11
+      }
+    },
+    "json": {
+      "total_seeded": 39,
+      "missed": 21,
+      "miss_categories": {
+        "KEYWORD_GAP": 11,
+        "FAMILY_OUT_OF_SCOPE": 10
+      }
+    },
+    "markdown": {
+      "total_seeded": 14,
+      "missed": 14,
+      "miss_categories": {
+        "EXTENSION_EXCLUDED": 14
+      }
+    },
+    "python": {
+      "total_seeded": 117,
+      "missed": 39,
+      "miss_categories": {
+        "KEYWORD_GAP": 28,
+        "FAMILY_OUT_OF_SCOPE": 11
+      }
+    },
+    "yaml": {
+      "total_seeded": 99,
+      "missed": 48,
+      "miss_categories": {
+        "FAMILY_OUT_OF_SCOPE": 21,
+        "KEYWORD_GAP": 27
+      }
+    }
+  },
+  "missed_controls": [
+    {
+      "repo": "flask",
+      "control_id": "github_pat_001",
+      "family": "github_pat",
+      "file_format": "python",
+      "expected_path": "config/github_pat_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "flask",
+      "control_id": "google_api_000",
+      "family": "google_api",
+      "file_format": "markdown",
+      "expected_path": "samples/google_api_000.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "flask",
+      "control_id": "google_api_001",
+      "family": "google_api",
+      "file_format": "json",
+      "expected_path": "env/google_api_001.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "flask",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "scripts/pem_private_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "flask",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "env",
+      "expected_path": "config/pem_private_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "flask",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "examples/pem_private_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "flask",
+      "control_id": "generic_bearer_000",
+      "family": "generic_bearer",
+      "file_format": "json",
+      "expected_path": "examples/generic_bearer_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "flask",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/generic_bearer_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "flask",
+      "control_id": "opaque_api_secret_002",
+      "family": "opaque_api_secret",
+      "file_format": "env",
+      "expected_path": "tests/fixtures/opaque_api_secret_002.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "DETECTOR_MISS",
+      "reason": "All three var_names contain 'secret', so keyword matching should fire. This single miss is anomalous; likely a value-side gate interaction (e.g. _looks_like_identifier_or_word on a value with $, *, @ chars in an env file)."
+    },
+    {
+      "repo": "flask",
+      "control_id": "opaque_session_token_000",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "examples/opaque_session_token_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "flask",
+      "control_id": "opaque_session_token_001",
+      "family": "opaque_session_token",
+      "file_format": "yaml",
+      "expected_path": "config/opaque_session_token_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "flask",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "json",
+      "expected_path": "examples/opaque_session_token_002.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "flask",
+      "control_id": "opaque_random_cred_000",
+      "family": "opaque_random_cred",
+      "file_format": "env",
+      "expected_path": "docs/examples/opaque_random_cred_000.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "flask",
+      "control_id": "opaque_random_cred_001",
+      "family": "opaque_random_cred",
+      "file_format": "env",
+      "expected_path": "examples/opaque_random_cred_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "flask",
+      "control_id": "opaque_random_cred_002",
+      "family": "opaque_random_cred",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/opaque_random_cred_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "github_pat_001",
+      "family": "github_pat",
+      "file_format": "yaml",
+      "expected_path": "examples/github_pat_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "github_pat_002",
+      "family": "github_pat",
+      "file_format": "yaml",
+      "expected_path": "config/github_pat_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "google_api_001",
+      "family": "google_api",
+      "file_format": "env",
+      "expected_path": "config/google_api_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "google_api_002",
+      "family": "google_api",
+      "file_format": "env",
+      "expected_path": "deploy/google_api_002.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "jwt_000",
+      "family": "jwt",
+      "file_format": "yaml",
+      "expected_path": "scripts/jwt_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "scripts/pem_private_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "config/pem_private_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/pem_private_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "generic_bearer_000",
+      "family": "generic_bearer",
+      "file_format": "json",
+      "expected_path": "samples/generic_bearer_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "env",
+      "expected_path": "scripts/generic_bearer_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "samples/generic_bearer_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "opaque_session_token_000",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "env/opaque_session_token_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "opaque_session_token_001",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "env/opaque_session_token_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "config/opaque_session_token_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "httpx",
+      "control_id": "opaque_random_cred_002",
+      "family": "opaque_random_cred",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/opaque_random_cred_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "requests",
+      "control_id": "github_pat_002",
+      "family": "github_pat",
+      "file_format": "markdown",
+      "expected_path": "scripts/github_pat_002.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "requests",
+      "control_id": "google_api_001",
+      "family": "google_api",
+      "file_format": "env",
+      "expected_path": "config/google_api_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "requests",
+      "control_id": "jwt_000",
+      "family": "jwt",
+      "file_format": "python",
+      "expected_path": "env/jwt_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "requests",
+      "control_id": "jwt_001",
+      "family": "jwt",
+      "file_format": "env",
+      "expected_path": "docs/examples/jwt_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "requests",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "json",
+      "expected_path": "tests/fixtures/pem_private_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "requests",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "scripts/pem_private_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "requests",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "samples/pem_private_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "requests",
+      "control_id": "generic_bearer_000",
+      "family": "generic_bearer",
+      "file_format": "python",
+      "expected_path": "samples/generic_bearer_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "requests",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "json",
+      "expected_path": "config/generic_bearer_001.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "requests",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "config/generic_bearer_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "requests",
+      "control_id": "opaque_session_token_000",
+      "family": "opaque_session_token",
+      "file_format": "env",
+      "expected_path": "docs/examples/opaque_session_token_000.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "requests",
+      "control_id": "opaque_session_token_001",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "env/opaque_session_token_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "requests",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "markdown",
+      "expected_path": "scripts/opaque_session_token_002.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "requests",
+      "control_id": "opaque_random_cred_000",
+      "family": "opaque_random_cred",
+      "file_format": "env",
+      "expected_path": "tests/fixtures/opaque_random_cred_000.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "requests",
+      "control_id": "opaque_random_cred_001",
+      "family": "opaque_random_cred",
+      "file_format": "json",
+      "expected_path": "config/opaque_random_cred_001.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "requests",
+      "control_id": "opaque_random_cred_002",
+      "family": "opaque_random_cred",
+      "file_format": "json",
+      "expected_path": "tests/fixtures/opaque_random_cred_002.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "github_pat_000",
+      "family": "github_pat",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/github_pat_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "jwt_000",
+      "family": "jwt",
+      "file_format": "json",
+      "expected_path": "deploy/jwt_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "jwt_001",
+      "family": "jwt",
+      "file_format": "markdown",
+      "expected_path": "docs/examples/jwt_001.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "scripts/pem_private_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "scripts/pem_private_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "examples/pem_private_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "examples/generic_bearer_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "python",
+      "expected_path": "scripts/generic_bearer_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "opaque_session_token_000",
+      "family": "opaque_session_token",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/opaque_session_token_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "env",
+      "expected_path": "tests/fixtures/opaque_session_token_002.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "opaque_random_cred_001",
+      "family": "opaque_random_cred",
+      "file_format": "yaml",
+      "expected_path": "env/opaque_random_cred_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "fastapi",
+      "control_id": "opaque_random_cred_002",
+      "family": "opaque_random_cred",
+      "file_format": "json",
+      "expected_path": "deploy/opaque_random_cred_002.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "django",
+      "control_id": "google_api_001",
+      "family": "google_api",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/google_api_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "django",
+      "control_id": "jwt_000",
+      "family": "jwt",
+      "file_format": "markdown",
+      "expected_path": ".github/workflows/jwt_000.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "django",
+      "control_id": "jwt_001",
+      "family": "jwt",
+      "file_format": "python",
+      "expected_path": "samples/jwt_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "django",
+      "control_id": "jwt_002",
+      "family": "jwt",
+      "file_format": "python",
+      "expected_path": "config/jwt_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "django",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "env/pem_private_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "django",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "docs/examples/pem_private_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "django",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "examples/pem_private_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "django",
+      "control_id": "generic_bearer_000",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "env/generic_bearer_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "django",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "deploy/generic_bearer_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "django",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "env",
+      "expected_path": "tests/fixtures/generic_bearer_002.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "django",
+      "control_id": "opaque_api_secret_001",
+      "family": "opaque_api_secret",
+      "file_format": "markdown",
+      "expected_path": "scripts/opaque_api_secret_001.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "django",
+      "control_id": "opaque_session_token_000",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "scripts/opaque_session_token_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "django",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "yaml",
+      "expected_path": "scripts/opaque_session_token_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "django",
+      "control_id": "opaque_random_cred_000",
+      "family": "opaque_random_cred",
+      "file_format": "yaml",
+      "expected_path": "config/opaque_random_cred_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "django",
+      "control_id": "opaque_random_cred_001",
+      "family": "opaque_random_cred",
+      "file_format": "yaml",
+      "expected_path": "docs/examples/opaque_random_cred_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "github_pat_000",
+      "family": "github_pat",
+      "file_format": "python",
+      "expected_path": "deploy/github_pat_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "github_pat_002",
+      "family": "github_pat",
+      "file_format": "markdown",
+      "expected_path": "scripts/github_pat_002.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "google_api_002",
+      "family": "google_api",
+      "file_format": "python",
+      "expected_path": "examples/google_api_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "config/pem_private_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "markdown",
+      "expected_path": ".github/workflows/pem_private_001.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "env/pem_private_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/generic_bearer_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "scripts/generic_bearer_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "opaque_session_token_001",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "docs/examples/opaque_session_token_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/opaque_session_token_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "opaque_random_cred_000",
+      "family": "opaque_random_cred",
+      "file_format": "env",
+      "expected_path": "docs/examples/opaque_random_cred_000.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "sqlalchemy",
+      "control_id": "opaque_random_cred_001",
+      "family": "opaque_random_cred",
+      "file_format": "yaml",
+      "expected_path": "deploy/opaque_random_cred_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "celery",
+      "control_id": "aws_pair_000",
+      "family": "aws_pair",
+      "file_format": "markdown",
+      "expected_path": "config/aws_pair_000.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "celery",
+      "control_id": "google_api_002",
+      "family": "google_api",
+      "file_format": "env",
+      "expected_path": "tests/fixtures/google_api_002.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "celery",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "examples/pem_private_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "celery",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "deploy/pem_private_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "celery",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "json",
+      "expected_path": "tests/fixtures/pem_private_002.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "celery",
+      "control_id": "generic_bearer_000",
+      "family": "generic_bearer",
+      "file_format": "python",
+      "expected_path": "examples/generic_bearer_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "celery",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "env/generic_bearer_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "celery",
+      "control_id": "opaque_session_token_000",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/opaque_session_token_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "celery",
+      "control_id": "opaque_session_token_001",
+      "family": "opaque_session_token",
+      "file_format": "yaml",
+      "expected_path": "scripts/opaque_session_token_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "celery",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "json",
+      "expected_path": "deploy/opaque_session_token_002.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "celery",
+      "control_id": "opaque_random_cred_000",
+      "family": "opaque_random_cred",
+      "file_format": "env",
+      "expected_path": "docs/examples/opaque_random_cred_000.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "celery",
+      "control_id": "opaque_random_cred_001",
+      "family": "opaque_random_cred",
+      "file_format": "yaml",
+      "expected_path": "docs/examples/opaque_random_cred_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "celery",
+      "control_id": "opaque_random_cred_002",
+      "family": "opaque_random_cred",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/opaque_random_cred_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "github_pat_002",
+      "family": "github_pat",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/github_pat_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "google_api_000",
+      "family": "google_api",
+      "file_format": "python",
+      "expected_path": "docs/examples/google_api_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "google_api_002",
+      "family": "google_api",
+      "file_format": "yaml",
+      "expected_path": "config/google_api_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "jwt_000",
+      "family": "jwt",
+      "file_format": "yaml",
+      "expected_path": ".github/workflows/jwt_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "jwt_001",
+      "family": "jwt",
+      "file_format": "yaml",
+      "expected_path": "examples/jwt_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": ".github/workflows/pem_private_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "scripts/pem_private_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "env",
+      "expected_path": "samples/pem_private_002.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "generic_bearer_000",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "examples/generic_bearer_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "markdown",
+      "expected_path": "samples/generic_bearer_001.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "examples/generic_bearer_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "opaque_session_token_001",
+      "family": "opaque_session_token",
+      "file_format": "env",
+      "expected_path": "examples/opaque_session_token_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "python",
+      "expected_path": "env/opaque_session_token_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "opaque_random_cred_000",
+      "family": "opaque_random_cred",
+      "file_format": "json",
+      "expected_path": "docs/examples/opaque_random_cred_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "pydantic",
+      "control_id": "opaque_random_cred_002",
+      "family": "opaque_random_cred",
+      "file_format": "json",
+      "expected_path": "tests/fixtures/opaque_random_cred_002.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "black",
+      "control_id": "stripe_000",
+      "family": "stripe",
+      "file_format": "markdown",
+      "expected_path": "samples/stripe_000.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "black",
+      "control_id": "github_pat_000",
+      "family": "github_pat",
+      "file_format": "json",
+      "expected_path": "deploy/github_pat_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "github_pat_001",
+      "family": "github_pat",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/github_pat_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "github_pat_002",
+      "family": "github_pat",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/github_pat_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "google_api_000",
+      "family": "google_api",
+      "file_format": "python",
+      "expected_path": "env/google_api_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "google_api_001",
+      "family": "google_api",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/google_api_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "google_api_002",
+      "family": "google_api",
+      "file_format": "yaml",
+      "expected_path": "examples/google_api_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gcp_key' contains no SEC002 keyword. 'google_api_key' and 'maps_api_key' (contain 'api_key') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "slack_bot_001",
+      "family": "slack_bot",
+      "file_format": "markdown",
+      "expected_path": "deploy/slack_bot_001.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "black",
+      "control_id": "jwt_001",
+      "family": "jwt",
+      "file_format": "json",
+      "expected_path": "config/jwt_001.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "jwt_002",
+      "family": "jwt",
+      "file_format": "yaml",
+      "expected_path": "examples/jwt_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "black",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "env",
+      "expected_path": ".github/workflows/pem_private_000.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "black",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "deploy/pem_private_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "black",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/pem_private_002.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "black",
+      "control_id": "generic_bearer_000",
+      "family": "generic_bearer",
+      "file_format": "python",
+      "expected_path": ".github/workflows/generic_bearer_000.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "black",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "python",
+      "expected_path": "tests/fixtures/generic_bearer_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "black",
+      "control_id": "generic_bearer_002",
+      "family": "generic_bearer",
+      "file_format": "yaml",
+      "expected_path": "tests/fixtures/generic_bearer_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "black",
+      "control_id": "opaque_session_token_000",
+      "family": "opaque_session_token",
+      "file_format": "json",
+      "expected_path": "config/opaque_session_token_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "black",
+      "control_id": "opaque_session_token_002",
+      "family": "opaque_session_token",
+      "file_format": "json",
+      "expected_path": "scripts/opaque_session_token_002.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'user_session' and 'access_session' contain no SEC002 keyword. 'session_token' (contains 'token') is detectable; the other two are not."
+    },
+    {
+      "repo": "black",
+      "control_id": "opaque_random_cred_000",
+      "family": "opaque_random_cred",
+      "file_format": "json",
+      "expected_path": "examples/opaque_random_cred_000.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "black",
+      "control_id": "opaque_random_cred_001",
+      "family": "opaque_random_cred",
+      "file_format": "json",
+      "expected_path": "docs/examples/opaque_random_cred_001.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "black",
+      "control_id": "opaque_random_cred_002",
+      "family": "opaque_random_cred",
+      "file_format": "yaml",
+      "expected_path": "config/opaque_random_cred_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "Generic entropy-only random credentials have no structural prefix or keyword pattern. Broad entropy rules intentionally excluded pending a labeled false-positive corpus. No SEC002 or other current rule covers this family."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "github_pat_001",
+      "family": "github_pat",
+      "file_format": "python",
+      "expected_path": "scripts/github_pat_001.py",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'gh_pat' contains no SEC002 keyword. 'github_token' and 'github_api_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "github_pat_002",
+      "family": "github_pat",
+      "file_format": "markdown",
+      "expected_path": ".github/workflows/github_pat_002.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "google_api_000",
+      "family": "google_api",
+      "file_format": "markdown",
+      "expected_path": "tests/fixtures/google_api_000.md",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "EXTENSION_EXCLUDED",
+      "reason": ".md is not in DEFAULT_EXTENSIONS or ALL_SUPPORTED_EXTENSIONS in heuristics.py. Files are excluded before any scanner sees them."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "jwt_001",
+      "family": "jwt",
+      "file_format": "yaml",
+      "expected_path": "scripts/jwt_001.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_name 'session_jwt' contains no SEC002 keyword. 'auth_token' and 'id_token' (contain 'token') are detectable."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "pem_private_000",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "docs/examples/pem_private_000.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "pem_private_001",
+      "family": "pem_private",
+      "file_format": "json",
+      "expected_path": "config/pem_private_001.json",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "pem_private_002",
+      "family": "pem_private",
+      "file_format": "yaml",
+      "expected_path": "config/pem_private_002.yaml",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "FAMILY_OUT_OF_SCOPE",
+      "reason": "PEM misses have three compounding causes: (1) No detection rule for PEM envelope markers exists in SEC002 or any current rule. (2) Python triple-quoted strings (\"\"\"...\"\"\") are not matched by the single-quote regex ['\"][^'\"]+['\"]. (3) YAML block scalars ('|') put the value on subsequent indented lines, invisible to a single-line key: value regex. PRIMARY classification: FAMILY_OUT_OF_SCOPE."
+    },
+    {
+      "repo": "mypy",
+      "control_id": "generic_bearer_001",
+      "family": "generic_bearer",
+      "file_format": "env",
+      "expected_path": "tests/fixtures/generic_bearer_001.env",
+      "outcome": "VALUE_NOT_FOUND",
+      "category": "KEYWORD_GAP",
+      "reason": "Var_names 'api_bearer' and 'auth_bearer' contain no SEC002 keyword. 'bearer_token' (contains 'token') is detectable; the other two are not."
+    }
+  ]
+}
