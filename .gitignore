@@ -54,3 +54,9 @@ demo-project-copy/
 
 # Python version managers
 .python-version
+
+# Private recall artifacts
+bench/positive_controls/generated/
+bench/positive_controls/seeded_repos/
+bench/positive_controls/*.private.json
+bench/positive_controls/seed_log.json
