@@ -656,7 +656,7 @@ def main() -> int:
     p("Listed in priority order. None implemented here.")
     p()
     p("**Action 1 — Document pem_private and opaque_random_cred as out-of-scope**")
-    p("Add explicit documentation in the benchmark README and CLAUDE.md that these")
+    p("Add explicit documentation in benchmark documentation that these")
     p("families are excluded by design. Update the recall report to show")
     p("'in-scope recall' (excluding out-of-scope families) alongside the raw number.")
     p("Estimated in-scope recall with these excluded: 188 / 230 = 81.7%.")
